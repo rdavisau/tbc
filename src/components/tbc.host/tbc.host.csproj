@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <RootNamespace>Tbc.Host</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="DryIoc.Microsoft.DependencyInjection" Version="4.0.0" />
+      <PackageReference Include="Google.Protobuf" Version="3.12.3" />
+      <PackageReference Include="Grpc.Core" Version="2.30.0" />
+      <PackageReference Include="Grpc.Tools" Version="2.30.0" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.6.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.6" />
+      <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+      <PackageReference Include="ReactiveFileSystemWatcher" Version="0.1.2.1" />
+      <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20303.1" />
+      <PackageReference Include="System.IO.Abstractions" Version="12.0.5" />
+      <PackageReference Include="System.Reactive.Compatibility" Version="4.4.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\tbc.core\tbc.core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Protobuf Include="..\tbc.core\Protos\asm.proto" GrpcServices="Client" />
+    </ItemGroup>
+
+</Project>
