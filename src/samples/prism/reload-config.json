@@ -1,0 +1,21 @@
+{
+    "ConsoleHost": {
+      "ExpectedClients": [ 
+        {
+          "Address": "localhost",
+          "Port": 50124
+        }
+      ]
+    },
+    "FileWatcher": {
+      "RootPath": "tbc.sample.prism",
+      "Ignore": [ "/obj/", "/bin/" ]
+    },
+    "AssemblyCompiler": {
+      "Debug": true,
+      "PreprocessorSymbols": [
+        "DEBUG",
+        "__RELOAD__"
+      ]
+    }
+  }

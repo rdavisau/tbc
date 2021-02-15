@@ -1,0 +1,1 @@
+run run-host.sh to start a host that will watch for the prism sample

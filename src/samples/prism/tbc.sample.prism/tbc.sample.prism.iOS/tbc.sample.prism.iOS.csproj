@@ -1,0 +1,172 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <PropertyGroup>
+        <RuntimeIdentifiers>mac;mac-x86;mac-x64</RuntimeIdentifiers>
+        <NuGetRuntimeIdentifier>mac</NuGetRuntimeIdentifier>
+        <LangVersion>preview</LangVersion>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">iPhoneSimulator</Platform>
+        <ProductVersion>8.0.30703</ProductVersion>
+        <SchemaVersion>2.0</SchemaVersion>
+        <ProjectGuid>{4016D632-29EA-45EF-9B35-8932562FB4C2}</ProjectGuid>
+        <ProjectTypeGuids>{FEACFBD2-3405-455C-9665-78FE426C6842};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+        <OutputType>Exe</OutputType>
+        <RootNamespace>tbc.sample.prism.iOS</RootNamespace>
+        <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
+        <AssemblyName>tbc.sample.prism.iOS</AssemblyName>
+        <MtouchHttpClientHandler>NSUrlSessionHandler</MtouchHttpClientHandler>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator' ">
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>full</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>bin\iPhoneSimulator\Debug</OutputPath>
+        <DefineConstants>DEBUG;ENABLE_TEST_CLOUD;LIVESHARP_DISABLE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+        <MtouchDebug>true</MtouchDebug>
+        <MtouchNoSymbolStrip>true</MtouchNoSymbolStrip>
+        <MtouchFastDev>true</MtouchFastDev>
+        <IOSDebuggerPort>38310</IOSDebuggerPort>
+        <MtouchLink>None</MtouchLink>
+        <MtouchArch>x86_64</MtouchArch>
+        <MtouchHttpClientHandler>NSUrlSessionHandler</MtouchHttpClientHandler>
+        <PlatformTarget>x86</PlatformTarget>
+        <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+        <MtouchExtraArgs>--interpreter=all</MtouchExtraArgs>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
+        <DebugType>none</DebugType>
+        <Optimize>true</Optimize>
+        <OutputPath>bin\iPhoneSimulator\Release</OutputPath>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+        <MtouchLink>None</MtouchLink>
+        <MtouchArch>x86_64</MtouchArch>
+        <ConsolePause>false</ConsolePause>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhone' ">
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>full</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>bin\iPhone\Debug</OutputPath>
+        <DefineConstants>DEBUG</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+        <ConsolePause>false</ConsolePause>
+        <MtouchArch>ARM64</MtouchArch>
+        <CodesignKey>iPhone Developer</CodesignKey>
+        <MtouchDebug>true</MtouchDebug>
+        <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
+        <DebugType>none</DebugType>
+        <Optimize>true</Optimize>
+        <OutputPath>bin\iPhone\Release</OutputPath>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+        <MtouchArch>ARM64</MtouchArch>
+        <ConsolePause>false</ConsolePause>
+        <CodesignKey>iPhone Developer</CodesignKey>
+        <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Ad-Hoc|iPhone' ">
+        <DebugType>none</DebugType>
+        <Optimize>True</Optimize>
+        <OutputPath>bin\iPhone\Ad-Hoc</OutputPath>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+        <ConsolePause>False</ConsolePause>
+        <MtouchArch>ARM64</MtouchArch>
+        <BuildIpa>True</BuildIpa>
+        <CodesignProvision>Automatic:AdHoc</CodesignProvision>
+        <CodesignKey>iPhone Distribution</CodesignKey>
+        <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AppStore|iPhone' ">
+        <DebugType>none</DebugType>
+        <Optimize>True</Optimize>
+        <OutputPath>bin\iPhone\AppStore</OutputPath>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+        <ConsolePause>False</ConsolePause>
+        <MtouchArch>ARM64</MtouchArch>
+        <CodesignProvision>Automatic:AppStore</CodesignProvision>
+        <CodesignKey>iPhone Distribution</CodesignKey>
+        <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="Main.cs" />
+        <Compile Include="AppDelegate.cs" />
+        <None Include="Entitlements.plist" />
+        <None Include="Info.plist" />
+        <Compile Include="Properties\AssemblyInfo.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <InterfaceDefinition Include="Resources\LaunchScreen.storyboard" />
+        <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\Contents.json">
+            <Visible>false</Visible>
+        </ImageAsset>
+    </ItemGroup>
+    <ItemGroup>
+        <Reference Include="System" />
+        <Reference Include="System.Xml" />
+        <Reference Include="System.Core" />
+        <Reference Include="Xamarin.iOS" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\tbc.sample.prism\tbc.sample.prism.csproj">
+            <Project>{FEC29B52-B36E-43A7-9E04-5E6EA596E6DF}</Project>
+            <Name>tbc.sample.prism</Name>
+        </ProjectReference>
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="DryIoc.dll" Version="4.5.0" />
+      <PackageReference Include="Google.Protobuf" Version="3.14.0" />
+      <PackageReference Include="Grpc.Core" Version="2.30.0" />
+      <PackageReference Include="Prism.Core" Version="8.0.0.1909" />
+      <PackageReference Include="Prism.DryIoc.Forms" Version="8.0.0.1909" />
+      <PackageReference Include="Prism.Forms" Version="8.0.0.1909" />
+      <PackageReference Include="Serilog" Version="2.10.0" />
+      <PackageReference Include="Serilog.Sinks.Debug" Version="1.0.1" />
+      <PackageReference Include="System.Buffers" Version="4.4.0" />
+      <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
+      <PackageReference Include="System.Memory" Version="4.5.3" />
+      <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+      <PackageReference Include="System.Reflection.Metadata" Version="1.6.0" />
+      <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.7.0" />
+      <PackageReference Include="System.Text.Encoding.CodePages" Version="4.5.1" />
+      <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.3" />
+      <PackageReference Include="tbc.target" Version="0.0.20210216.10" />
+      <PackageReference Include="Xamarin.Forms" Version="5.0.0.2012" />
+    </ItemGroup>
+    <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
+
+    <Target Name="GrpcCoreShim" BeforeTargets="CoreCompile">
+        <PropertyGroup>
+            <GrpcCoreTargetsRelativePath>$(NugetPackageRoot)\grpc.core\2.30.0\build\Xamarin.iOS10\</GrpcCoreTargetsRelativePath>
+        </PropertyGroup>
+        <ConvertToAbsolutePath Paths="$(GrpcCoreTargetsRelativePath)">
+            <Output TaskParameter="AbsolutePaths" PropertyName="GrpcCoreTargetsAbsPath" />
+        </ConvertToAbsolutePath>
+        <ItemGroup>
+            <NativeReference Remove="libgrpc_csharp_ext.a" />
+            <NativeReference Remove="libgrpc.a" />
+            <NativeReference Include="$(GrpcCoreTargetsAbsPath)..\..\native\ios\universal\libgrpc_csharp_ext.a">
+                <Kind>Static</Kind>
+                <ForceLoad>True</ForceLoad>
+                <IsCxx>True</IsCxx>
+            </NativeReference>
+            <NativeReference Include="$(GrpcCoreTargetsAbsPath)..\..\native\ios\universal\libgrpc.a">
+                <Kind>Static</Kind>
+                <ForceLoad>True</ForceLoad>
+                <IsCxx>True</IsCxx>
+            </NativeReference>
+        </ItemGroup>
+    </Target>
+    
+</Project>
