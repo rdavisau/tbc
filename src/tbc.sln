@@ -12,6 +12,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Clients", "Clients", "{A64A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tbc.host.console", "heads\tbc.host.console\tbc.host.console.csproj", "{81CF0DFE-7625-4790-B571-E8CC27EB65BA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{45770488-C8FF-4CC1-B54D-C44511021CBC}"
+ProjectSection(SolutionItems) = preProject
+	..\build\build.sh = ..\build\build.sh
+	..\build\build.yml = ..\build\build.yml
+EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
