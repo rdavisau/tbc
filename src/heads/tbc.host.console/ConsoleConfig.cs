@@ -34,6 +34,7 @@ namespace tbc.host.console
                     = new AssemblyCompilationOptions
                         {
                             Debug = true,
+                            EmitDebugInformation = true,
                         }
                         .ToJObject(),
                 

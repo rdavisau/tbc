@@ -115,10 +115,10 @@ namespace Tbc.Host.Components.IncrementalCompiler
 
             var result =
                 _options.EmitDebugInformation
-                    ? compilation.Emit(asmStream)
-                    : compilation.Emit(
+                    ? compilation.Emit(
                         asmStream,
-                        pdbStream, options: new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb));
+                        pdbStream, options: new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb))
+                    : compilation.Emit(asmStream);
 
             emittedAssembly = new EmittedAssembly
             {
