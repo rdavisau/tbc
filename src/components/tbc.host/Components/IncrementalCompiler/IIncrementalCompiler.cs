@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Tbc.Host.Components.FileWatcher.Models;
 using Tbc.Host.Components.IncrementalCompiler.Models;
 using Tbc.Protocol;
@@ -8,7 +9,9 @@ namespace Tbc.Host.Components.IncrementalCompiler
     {
         string OutputPath { get; set; }
         string RootPath { get; set; }
-        EmittedAssembly StageFile(ChangedFile file);
+        List<string> StagedFiles { get; }
+        EmittedAssembly StageFile(ChangedFile file) => StageFile(file, false);
+        EmittedAssembly StageFile(ChangedFile file, bool silent = false);
         void AddMetadataReference(AssemblyReference asm);
         void ClearReferences();
         void ClearTrees();

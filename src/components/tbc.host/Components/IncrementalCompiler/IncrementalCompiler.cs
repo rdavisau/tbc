@@ -42,6 +42,9 @@ namespace Tbc.Host.Components.IncrementalCompiler
 
         public CSharpCompilation CurrentCompilation { get; set; }
         public Dictionary<string, SyntaxTree> RawTrees { get; } = new Dictionary<string, SyntaxTree>();
+
+        public List<string> StagedFiles
+            => CurrentCompilation.SyntaxTrees.Select(x => x.FilePath).ToList();
         
         public IncrementalCompiler(
             AssemblyCompilationOptions options, 
@@ -61,7 +64,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
                 CSharpCompilation.Create("r2", options: cscOptions);
         }
         
-        public EmittedAssembly StageFile(ChangedFile file)
+        public EmittedAssembly StageFile(ChangedFile file, bool silent = false)
         {
             var sw = Stopwatch.StartNew();
             
@@ -83,6 +86,15 @@ namespace Tbc.Host.Components.IncrementalCompiler
                     : c.AddSyntaxTrees(syntaxTree);
 
                 RawTrees[file.Path] = syntaxTree;
+
+                if (silent)
+                {
+                    Logger.LogInformation(
+                        "Stage '{FileName}' without emit, Duration: {Duration:N0}ms, Types: [ {Types} ]",
+                        file, sw.ElapsedMilliseconds, syntaxTree.GetContainedTypes());
+                    
+                    return newC;
+                }
                 
                 var result = EmitAssembly(newC, out emittedAssembly);
 
@@ -146,10 +158,11 @@ namespace Tbc.Host.Components.IncrementalCompiler
         public void AddMetadataReference(AssemblyReference asm)
             => WithCompilation(c =>
             {
+                /*
                 Logger.LogInformation(
                     "Adding reference to '{AssemblyLocation}' for client '{Client}'",
                     Path.GetFileName(asm.AssemblyLocation), _client.Client);
-                
+                */
                 return c.AddReferences(MetadataReference.CreateFromImage(asm.PeBytes));
             });
         

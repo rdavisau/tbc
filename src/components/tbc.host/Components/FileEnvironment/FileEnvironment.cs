@@ -1,17 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using Grpc.Core;
+using Grpc.Core.Utils;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Tbc.Host.Components.Abstractions;
 using Tbc.Host.Components.CommandProcessor;
 using Tbc.Host.Components.CommandProcessor.Models;
 using Tbc.Host.Components.FileEnvironment.Models;
 using Tbc.Host.Components.FileWatcher;
+using Tbc.Host.Components.FileWatcher.Models;
 using Tbc.Host.Components.IncrementalCompiler;
 using Tbc.Host.Components.IncrementalCompiler.Models;
+using Tbc.Host.Extensions;
 using Tbc.Protocol;
 
 namespace Tbc.Host.Components.FileEnvironment
@@ -51,6 +58,8 @@ namespace Tbc.Host.Components.FileEnvironment
             
             await Client.WaitForConnection();
 
+            await TryLoadLoadContext();
+            
             Task.Factory.StartNew(SetupReferenceTracking, TaskCreationOptions.LongRunning);
             
             FileWatcher
@@ -71,17 +80,31 @@ namespace Tbc.Host.Components.FileEnvironment
             Logger.LogWarning("FileEnvironment for client {@Client} terminating", Client);
         }
 
-        public Task Reset()
+        private async Task TryLoadLoadContext()
+        {
+            if (!String.IsNullOrWhiteSpace(_loadContext))
+            {
+                var ctx = JsonConvert.DeserializeObject<PersistedContext>(
+                    await File.ReadAllTextAsync($"{_loadContext}.json"));
+
+                foreach (var file in ctx.WatchedFiles.Select(x => new ChangedFile { Path = x, Contents = File.ReadAllText(x) }))
+                    IncrementalCompiler.StageFile(file, silent: true);
+
+                await SetPrimaryTypeHint(ctx.PrimaryTypeHint);
+            }
+        }
+
+        public async Task Reset()
         {
             Logger.LogInformation("Resetting incremental compiler state");
             
             IncrementalCompiler.ClearTrees();
             IncrementalCompiler.ClearReferences();
 
+            await TryLoadLoadContext();
+
             Task.Factory.StartNew(SetupReferenceTracking, TaskCreationOptions.LongRunning);
             Task.Factory.StartNew(SetupCommandListening, TaskCreationOptions.LongRunning);
-            
-            return Task.CompletedTask;
         }
 
         public async Task SetupReferenceTracking()
@@ -93,12 +116,13 @@ namespace Tbc.Host.Components.FileEnvironment
             var iterator = await Client.AssemblyReferences();
             try
             {
-                while (await iterator.MoveNext(default) && !Terminated)
+                await iterator.ForEachAsync(async asm =>
                 {
-                    var asm = iterator.Current;
+                    if (Terminated)
+                        return;
 
                     if (seen.Contains(asm.AssemblyName))
-                        continue;
+                        return;
                     else
                         seen.Add(asm.AssemblyName);
 
@@ -107,7 +131,7 @@ namespace Tbc.Host.Components.FileEnvironment
                         asm.AssemblyName, asm.AssemblyLocation, Client.Client);
 
                     IncrementalCompiler.AddMetadataReference(asm);
-                }
+                });
             }
             catch (Exception ex)
             {
@@ -145,6 +169,7 @@ namespace Tbc.Host.Components.FileEnvironment
         public bool Terminated { get; set; }
 
         private EmittedAssembly _lastEmittedAssembly;
+        private string _loadContext;
 
         public async Task<Outcome> SendAssemblyForReload(EmittedAssembly asm)
         {
@@ -214,10 +239,65 @@ namespace Tbc.Host.Components.FileEnvironment
                     
                     Logger.LogInformation("{@Outcome}", outcome);
                 }
+            },
+            
+            new TbcCommand
+            {
+                Command = "context",
+                Execute = (_, args) =>
+                {
+                    if (!args.Any())
+                        Logger.LogWarning("Need subcommand for context operation");
+
+                    var sub = args[0];
+
+                    switch (sub)
+                    {
+                        case "load":
+                            var toLoad = args[1];
+                            SetLoadContext(toLoad);
+                            break;
+                        
+                        case "save":
+                            var toSave = args[1];
+                            SaveContext(toSave);
+                            break;
+                        
+                        default:
+                            Logger.LogWarning("Don't know how to handle subcommand '{SubCommand}' of context");
+                            break;                            
+                    }
+                                        
+                    return Task.CompletedTask;
+                }
             }
         };
+        
+        public void SaveContext(string saveIdentifier)
+        {
+            var ctx = new PersistedContext
+            {
+                PrimaryTypeHint = _primaryTypeHint,
+                WatchedFiles = IncrementalCompiler.StagedFiles
+            };
+            
+            File.WriteAllText($"{saveIdentifier}.json", ctx.ToJson());
+        }
+
+        public void SetLoadContext(string saveIdentifier)
+        {
+            _loadContext = saveIdentifier;
+            
+            Reset();
+        }
 
         public IEnumerable<IExposeCommands> Components 
             => new object [] { IncrementalCompiler, FileWatcher }.OfType<IExposeCommands>();
+    }
+
+    public class PersistedContext
+    {
+        public string? PrimaryTypeHint { get; set; }
+        public List<string> WatchedFiles { get; set; }
     }
 }
