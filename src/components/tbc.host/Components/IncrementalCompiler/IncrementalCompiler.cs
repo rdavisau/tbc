@@ -72,6 +72,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
                 CSharpSyntaxTree.ParseText(
                     file.Contents,
                     CSharpParseOptions.Default
+                        .WithLanguageVersion(LanguageVersion.Preview)
                         .WithKind(SourceCodeKind.Regular)
                         .WithPreprocessorSymbols(_options.PreprocessorSymbols.ToArray()),
                     path: file.Path,
