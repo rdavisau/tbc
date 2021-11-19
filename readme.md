@@ -6,6 +6,9 @@ it's alpha quality by me for me
 
 [![Here's a video](https://i.imgur.com/IljtZDz.png)](https://ryandavisau.blob.core.windows.net/store/teebeecee.mp4?sp=r&st=2021-02-15T07:34:52Z&se=2026-01-31T15:34:52Z&spr=https&sv=2019-12-12&sr=b&sig=eW2DWnMw162dTqEN7DIAzrB6J6MdRWIBZKoRfO32XF8%3D "Here's a video")
 
+#### ⚠️ note: running on M1
+seems like the [grpc core](https://github.com/grpc/grpc/tree/master/src/csharp) peeps are unlikely to implement macos/arm64 support. The api for the new-and-now-recommended [grpc-dotnet](https://github.com/grpc/grpc-dotnet) is a little too different to for me to migrate to at the moment. In the meantime, you can run tbc.console using x64 dotnet/rosetta: `PROTOBUF_TOOLS_OS=macos PROTOBUF_TOOLS_CPU=x64 dotnet run -a x64 --framework net6.0`. Feels a tad slower than on intel - most notably on the first reload - but still zippy. 
+
 # features
 
 ## elevator pitch
