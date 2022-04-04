@@ -67,7 +67,11 @@ namespace Tbc.Host.Components.IncrementalCompiler
         public EmittedAssembly StageFile(ChangedFile file, bool silent = false)
         {
             var sw = Stopwatch.StartNew();
-            
+
+            file.Contents = file.Contents.Replace(
+                "_MYGUID_MYGUID_MYGUID_MYGUID_MYGUID_",
+                Guid.NewGuid().ToString().Replace("-", "_"));
+                            
             var syntaxTree = 
                 CSharpSyntaxTree.ParseText(
                     file.Contents,
