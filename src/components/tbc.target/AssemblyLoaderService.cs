@@ -10,10 +10,12 @@ using Grpc.Core;
 using Tbc.Protocol;
 using Tbc.Target.Interfaces;
 using Tbc.Target.Requests;
+using LoadDynamicAssemblyRequest = Tbc.Protocol.LoadDynamicAssemblyRequest;
+using Outcome = Tbc.Protocol.Outcome;
 
 namespace Tbc.Target
 {
-    public class AssemblyLoaderService : AssemblyLoader.AssemblyLoaderBase
+    public class AssemblyLoaderService : Protocol.AssemblyLoader.AssemblyLoaderBase
     {
         private IReloadManager _reloadManager;
         private readonly Action<string> _log;
@@ -63,7 +65,16 @@ namespace Tbc.Target
                     PrimaryType = primaryType
                 };
 
-                return await _reloadManager.ProcessNewAssembly(req);
+                var canonicalOutcome = await _reloadManager.ProcessNewAssembly(req);
+
+                return new Outcome
+                {
+                    Success = canonicalOutcome.Success,
+                    Messages = { new Message
+                    {
+                        Message_ = canonicalOutcome.Messages.FirstOrDefault()?.Message ?? "no message"
+                    } },
+                };
             }
             catch (Exception ex)
             {
@@ -81,7 +92,17 @@ namespace Tbc.Target
         {
             try
             {
-                return await _reloadManager.ExecuteCommand(new CommandRequest(request.Command, request.Args.ToList()));
+                var canonicalOutcome =
+                    await _reloadManager.ExecuteCommand(new CommandRequest(request.Command, request.Args.ToList()));
+
+                return new Outcome
+                {
+                    Success = canonicalOutcome.Success,
+                    Messages = { new Message
+                    {
+                        Message_ = canonicalOutcome.Messages.FirstOrDefault()?.Message ?? "no message"
+                    } },
+                };
             }
             catch (Exception ex)
             {
@@ -106,8 +127,8 @@ namespace Tbc.Target
                 await WriteIfNecessary(asm, responseStream);
 
             _log($"Finished sending current assemblies in {sw.Elapsed}");
-            
-            AppDomain.CurrentDomain.AssemblyLoad += async (sender, args) 
+
+            AppDomain.CurrentDomain.AssemblyLoad += async (sender, args)
                 => await WriteIfNecessary(args.LoadedAssembly, responseStream);
 
             await new TaskCompletionSource<bool>(context.CancellationToken).Task;

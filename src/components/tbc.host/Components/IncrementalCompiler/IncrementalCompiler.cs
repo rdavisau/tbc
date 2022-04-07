@@ -11,14 +11,15 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.Extensions.Logging;
+using Tbc.Core.Models;
 using Tbc.Host.Components.Abstractions;
 using Tbc.Host.Components.CommandProcessor.Models;
 using Tbc.Host.Components.FileEnvironment.Models;
 using Tbc.Host.Components.FileWatcher.Models;
 using Tbc.Host.Components.IncrementalCompiler.Models;
+using Tbc.Host.Components.TargetClient.GrpcCore;
 using Tbc.Host.Config;
 using Tbc.Host.Extensions;
-using Tbc.Protocol;
 
 namespace Tbc.Host.Components.IncrementalCompiler
 {
@@ -27,7 +28,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
         private bool _disposing;
         
         private readonly AssemblyCompilationOptions _options;
-        private readonly TargetClient.TargetClient _client;
+        private readonly GrpcCoreTargetClient _client;
         
         private readonly IFileSystem _fileSystem;
 
@@ -48,7 +49,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
         
         public IncrementalCompiler(
             AssemblyCompilationOptions options, 
-            IClient client, Func<IClient, TargetClient.TargetClient> targetClientFactory, 
+            IRemoteClientDefinition client, Func<IRemoteClientDefinition, GrpcCoreTargetClient> targetClientFactory, 
             IFileSystem fileSystem, ILogger<IncrementalCompiler> logger) : base(logger)
         {
             _options = options;
@@ -278,7 +279,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
         }
 
         string IExposeCommands.Identifier 
-            => $"inc-{_client.Client.Address}-{_client.Client.Port}";
+            => $"inc-{_client.ClientDefinition.Address}-{_client.ClientDefinition.Port}";
 
         IEnumerable<TbcCommand> IExposeCommands.Commands => new List<TbcCommand>
         {

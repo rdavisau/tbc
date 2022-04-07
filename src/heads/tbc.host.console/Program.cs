@@ -1,12 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DryIoc;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Tbc.Host;
 using Tbc.Host.Components.Abstractions;
+using Tbc.Host.Components.FileEnvironment.Models;
+using Tbc.Host.Components.TargetClient;
+using Tbc.Host.Components.TargetClient.GrpcCore;
 using tbc.host.console.ConsoleHost;
 
 namespace tbc.host.console
@@ -31,7 +36,10 @@ namespace tbc.host.console
 
             await
                 Configurator
-                    .ConfigureServices(configuration, withAssemblies: typeof(Program).Assembly)
+                    .ConfigureServices(configuration, withAssemblies: typeof(Program).Assembly,
+                        configure: c => c.RegisterDelegate<Func<IRemoteClientDefinition, ITargetClient>>(
+                            sp => client
+                               => sp.GetRequiredService<Func<IRemoteClientDefinition, GrpcCoreTargetClient>>()(client)))
                     .Resolve<IHost>()
                     .Run();
         }

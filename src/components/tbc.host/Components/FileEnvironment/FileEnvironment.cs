@@ -4,12 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
-using Google.Protobuf;
-using Grpc.Core;
-using Grpc.Core.Utils;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Tbc.Core.Models;
 using Tbc.Host.Components.Abstractions;
 using Tbc.Host.Components.CommandProcessor;
 using Tbc.Host.Components.CommandProcessor.Models;
@@ -18,8 +15,8 @@ using Tbc.Host.Components.FileWatcher;
 using Tbc.Host.Components.FileWatcher.Models;
 using Tbc.Host.Components.IncrementalCompiler;
 using Tbc.Host.Components.IncrementalCompiler.Models;
+using Tbc.Host.Components.TargetClient;
 using Tbc.Host.Extensions;
-using Tbc.Protocol;
 
 namespace Tbc.Host.Components.FileEnvironment
 {
@@ -27,15 +24,15 @@ namespace Tbc.Host.Components.FileEnvironment
     {
         private bool _running;
         
-        public TargetClient.TargetClient Client { get; }
+        public ITargetClient Client { get; }
         public ICommandProcessor CommandProcessor { get; }
         public IFileWatcher FileWatcher { get; }
         public IIncrementalCompiler IncrementalCompiler { get; }
         
-        public FileEnvironment(IClient client,
+        public FileEnvironment(IRemoteClientDefinition client,
             IFileWatcher fileWatcher, ICommandProcessor commandProcessor,
-            Func<IClient, TargetClient.TargetClient> targetClientFactory, 
-            Func<IClient, IIncrementalCompiler> incrementalCompilerFactory,
+            Func<IRemoteClientDefinition, ITargetClient> targetClientFactory,
+            Func<IRemoteClientDefinition, IIncrementalCompiler> incrementalCompilerFactory,
             ILogger<FileEnvironment> logger) : base(logger)
         {
             Client = targetClientFactory(client);
@@ -128,7 +125,7 @@ namespace Tbc.Host.Components.FileEnvironment
 
                     Logger.LogInformation(
                         "Adding reference to {AssemblyName} from {AssemblyLocation} for client {Client}",
-                        asm.AssemblyName, asm.AssemblyLocation, Client.Client);
+                        asm.AssemblyName, asm.AssemblyLocation, Client.ClientDefinition);
 
                     IncrementalCompiler.AddMetadataReference(asm);
                 });
@@ -147,13 +144,15 @@ namespace Tbc.Host.Components.FileEnvironment
             var iterator = await Client.CommandRequests();
             try
             {
-                while (await iterator.MoveNext(default) && !Terminated)
+                var enumerator = iterator.GetAsyncEnumerator();
+
+                while (await enumerator.MoveNextAsync() && !Terminated)
                 {
-                    var request = iterator.Current;
+                    var request = enumerator.Current;
 
                     Logger.LogInformation(
                         "Received command request {@Request} from target {Client}",
-                        request, Client.Client);
+                        request, Client.ClientDefinition);
 
                     // doh
                     await CommandProcessor.HandleCommand($"{request.Command} {String.Join(" ", request.Args)}");
@@ -177,15 +176,15 @@ namespace Tbc.Host.Components.FileEnvironment
             var req = new LoadDynamicAssemblyRequest
             {
                 AssemblyName = asm.AssemblyName,
-                PeBytes = ByteString.CopyFrom(asm.Pe),
-                PdbBytes = asm.Pd == null ? ByteString.Empty : ByteString.CopyFrom(asm.Pd),
+                PeBytes = asm.Pe,
+                PdbBytes = asm.Pd,
                 PrimaryTypeName = 
                     String.IsNullOrWhiteSpace(_primaryTypeHint) 
                     ? "" 
                     : TryResolvePrimaryType(_primaryTypeHint)
             };
             
-            return await Client.Loader.LoadAssemblyAsync(req);
+            return await Client.LoadAssemblyAsync(req);
         }
 
         public string TryResolvePrimaryType(string typeHint) 
@@ -207,7 +206,7 @@ namespace Tbc.Host.Components.FileEnvironment
         }
 
         string IExposeCommands.Identifier 
-            => $"env-{Client.Client.Address}-{Client.Client.Port}";
+            => $"env-{Client.ClientDefinition.Address}-{Client.ClientDefinition.Port}";
 
         IEnumerable<TbcCommand> IExposeCommands.Commands => new List<TbcCommand>
         {
@@ -235,7 +234,7 @@ namespace Tbc.Host.Components.FileEnvironment
                     foreach (var arg in args)
                         req.Args.Add(arg);
 
-                    var outcome = await Client.Loader.ExecAsync(req);
+                    var outcome = await Client.ExecAsync(req);
                     
                     Logger.LogInformation("{@Outcome}", outcome);
                 }

@@ -3,6 +3,7 @@
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
         <RootNamespace>Tbc.Host</RootNamespace>
+        <LangVersion>preview</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

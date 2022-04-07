@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Tbc.Protocol;
+using Tbc.Core.Models;
 using Tbc.Target.Requests;
 
 namespace Tbc.Target.Interfaces
