@@ -5,6 +5,7 @@
         <RootNamespace>Tbc.Target</RootNamespace>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageVersion>1.0.14</PackageVersion>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

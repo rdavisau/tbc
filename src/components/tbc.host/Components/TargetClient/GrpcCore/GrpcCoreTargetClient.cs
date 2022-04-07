@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Reactive.Threading.Tasks;
@@ -7,26 +8,37 @@ using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Tbc.Host.Components.Abstractions;
 using Tbc.Host.Components.FileEnvironment.Models;
+using Tbc.Host.Extensions;
 using Tbc.Protocol;
+using CachedAssemblyState = Tbc.Protocol.CachedAssemblyState;
 
-namespace Tbc.Host.Components.TargetClient
+namespace Tbc.Host.Components.TargetClient.GrpcCore
 {
-    public class TargetClient : ComponentBase<TargetClient>
+    public class GrpcCoreTargetClient : ComponentBase<GrpcCoreTargetClient>, ITargetClient
     {
-        private readonly IClient _client;
+        public IRemoteClientDefinition ClientDefinition { get; }
         
-        private readonly Subject<ChannelState> _channelStateSub = new Subject<ChannelState>();
-        public IObservable<ChannelState> ClientChannelState => _channelStateSub.AsObservable();
+        private readonly Subject<ChannelState> _channelStateSub = new();
+        private CanonicalChannelState ToCanonicalChannelState(ChannelState state)
+            => Enum.Parse<CanonicalChannelState>(state.ToString()); // CanonicalChannelState is a clone of ChannelState
 
-        public TargetClient(IClient client, ILogger<TargetClient> logger) : base(logger)
+        public IObservable<CanonicalChannelState> ClientChannelState
+            => _channelStateSub
+               .Select(ToCanonicalChannelState)
+               .AsObservable();
+
+        private AssemblyLoader.AssemblyLoaderClient Loader { get; set; }
+        private Channel Channel { get; set; }
+
+        public GrpcCoreTargetClient(IRemoteClientDefinition client, ILogger<GrpcCoreTargetClient> logger) : base(logger)
         {
-            _client = client;
+            ClientDefinition = client;
         }
 
         public async Task WaitForConnection()
         {
             var channel = new Channel(
-                _client.Address, _client.Port,
+                ClientDefinition.Address, ClientDefinition.Port,
                 ChannelCredentials.Insecure,
                 new []
                 {
@@ -44,7 +56,7 @@ namespace Tbc.Host.Components.TargetClient
         private async Task TrackChannelState(Channel channel)
         {
             void LogState(ChannelState s)
-                => Logger.LogInformation("Client {Client} channel state is now '{ChannelState}'", Client, s);
+                => Logger.LogInformation("Client {Client} channel state is now '{ChannelState}'", ClientDefinition, s);
             
             var state = channel.State;
             LogState(state);
@@ -60,7 +72,7 @@ namespace Tbc.Host.Components.TargetClient
             }
         }
 
-        public async Task<IAsyncStreamReader<AssemblyReference>> AssemblyReferences()
+        public async Task<IAsyncEnumerable<Core.Models.AssemblyReference>> AssemblyReferences()
         {
             if (Channel?.State != ChannelState.Ready)
                 throw new Exception($"Channel state is '{Channel?.State}' but needed '{ChannelState.Ready}'");
@@ -70,8 +82,9 @@ namespace Tbc.Host.Components.TargetClient
                 try
                 {
                     Loader ??= new AssemblyLoader.AssemblyLoaderClient(Channel);
-                    
-                    return Loader.SynchronizeDependencies(new CachedAssemblyState()).ResponseStream;
+
+                    return Loader.SynchronizeDependencies(new CachedAssemblyState()).ResponseStream
+                       .ReadAllAsync(x => x.ToCanonical());
                 }
                 catch (Exception ex)
                 {
@@ -80,7 +93,7 @@ namespace Tbc.Host.Components.TargetClient
             }
         }
         
-        public async Task<IAsyncStreamReader<ExecuteCommandRequest>> CommandRequests()
+        public async Task<IAsyncEnumerable<Core.Models.ExecuteCommandRequest>> CommandRequests()
         {
             if (Channel?.State != ChannelState.Ready)
                 throw new Exception($"Channel state is '{Channel?.State}' but needed '{ChannelState.Ready}'");
@@ -89,7 +102,7 @@ namespace Tbc.Host.Components.TargetClient
             {
                 try
                 {
-                    return Loader.RequestCommand(new Unit()).ResponseStream;
+                    return Loader.RequestCommand(new Unit()).ResponseStream.ReadAllAsync(x => x.ToCanonical());
                 }
                 catch (Exception ex)
                 {
@@ -98,17 +111,10 @@ namespace Tbc.Host.Components.TargetClient
                 }
             }
         }
-
-        public AssemblyLoader.AssemblyLoaderClient Loader { get; set; }
-
-        public Channel Channel { get; set; }
-
         public override string ToString()
         {
-            return $"{_client.Address}:{_client.Port} (Channel State: {Channel?.State})";
+            return $"{ClientDefinition.Address}:{ClientDefinition.Port} (Channel State: {Channel?.State})";
         }
-
-        public IClient Client => _client;
 
         public void Dispose()
         {
@@ -117,7 +123,15 @@ namespace Tbc.Host.Components.TargetClient
 
         public Task WaitForTerminalState() =>
             ClientChannelState
-                .TakeUntil(x => x == ChannelState.Shutdown || x == ChannelState.TransientFailure || x == ChannelState.Idle)
+                .TakeUntil(x => x == CanonicalChannelState.Shutdown
+                             || x == CanonicalChannelState.TransientFailure
+                             || x == CanonicalChannelState.Idle)
                 .ToTask();
+
+        public Task<Core.Models.Outcome> ExecAsync(Tbc.Core.Models.ExecuteCommandRequest req)
+            => Loader.ExecAsync(req.ToCore()).ResponseAsync.ContinueWith(t => t.Result.ToCanonical());
+
+        public Task<Core.Models.Outcome> LoadAssemblyAsync(Tbc.Core.Models.LoadDynamicAssemblyRequest req)
+            => Loader.LoadAssemblyAsync(req.ToCore()).ResponseAsync.ContinueWith(t => t.Result.ToCanonical());
     }
 }

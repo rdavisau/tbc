@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Tbc.Protocol;
+using Tbc.Core.Models;
 using Tbc.Target.Interfaces;
 using Tbc.Target.Requests;
 

@@ -30,7 +30,7 @@ namespace Tbc.Target
                 new ChannelOption(ChannelOptions.MaxSendMessageLength, 838860800)
             })
             {
-                Services = { AssemblyLoader.BindService(new AssemblyLoaderService(
+                Services = { Protocol.AssemblyLoader.BindService(new AssemblyLoaderService(
                     reloadManager, 
                     log ?? (s => Debug.WriteLine(s))
                 )) },

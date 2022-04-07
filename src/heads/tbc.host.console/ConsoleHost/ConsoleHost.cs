@@ -15,12 +15,12 @@ namespace tbc.host.console.ConsoleHost
     public class ConsoleHost : ComponentBase<ConsoleHost>, IHost
     {
         private readonly List<RemoteClient> _expectedClients;
-        private readonly Func<IClient, IFileEnvironment> _fileEnvironmentFactory;
+        private readonly Func<IRemoteClientDefinition, IFileEnvironment> _fileEnvironmentFactory;
         private readonly ICommandProcessor _commandProcessor;
 
         public ConsoleHost(
             Dictionary<string, JObject> rawConfig, ExpectedClientsConfig clientsConfig, 
-            ICommandProcessor commandProcessor, Func<IClient, IFileEnvironment> fileEnvironmentFactory, 
+            ICommandProcessor commandProcessor, Func<IRemoteClientDefinition, IFileEnvironment> fileEnvironmentFactory, 
             ILogger<ConsoleHost> logger) : base(logger)
         {
             _expectedClients = clientsConfig.ExpectedClients;

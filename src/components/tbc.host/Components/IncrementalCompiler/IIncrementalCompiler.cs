@@ -1,7 +1,7 @@
 using System.Collections.Generic;
+using Tbc.Core.Models;
 using Tbc.Host.Components.FileWatcher.Models;
 using Tbc.Host.Components.IncrementalCompiler.Models;
-using Tbc.Protocol;
 
 namespace Tbc.Host.Components.IncrementalCompiler
 {
