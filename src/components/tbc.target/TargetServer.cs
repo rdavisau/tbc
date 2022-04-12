@@ -1,9 +1,11 @@
 using System;
-using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
-using Grpc.Core;
-using Tbc.Protocol;
+using Tbc.Core.Apis;
+using Tbc.Core.Socket;
 using Tbc.Target.Config;
+using Tbc.Target.Implementation;
 using Tbc.Target.Interfaces;
 
 namespace Tbc.Target
@@ -14,7 +16,7 @@ namespace Tbc.Target
 
         public TargetServer() : this(TargetConfiguration.Default())
         {
-            
+
         }
 
         public TargetServer(TargetConfiguration configuration)
@@ -24,20 +26,34 @@ namespace Tbc.Target
 
         public async Task Run(IReloadManager reloadManager, Action<string> log = null)
         {
-            var server = new Server(new []
+            log ??= Console.WriteLine;
+
+            var listener = new TcpListener(IPAddress.Any, Configuration.ListenPort);
+            var handler = new AssemblyLoaderService(reloadManager, log);
+
+            listener.Start();
+
+            Task.Run(async () =>
             {
-                new ChannelOption(ChannelOptions.MaxReceiveMessageLength, 838860800),
-                new ChannelOption(ChannelOptions.MaxSendMessageLength, 838860800)
+                while (true)
+                {
+                    var connection = await listener.AcceptTcpClientAsync();
+
+                    try
+                    {
+                        var socketServer = new SocketServer<ITbcProtocol>(connection, handler, "client", log);
+                        await socketServer.Run();
+                    }
+                    catch (Exception ex)
+                    {
+                        log($"socket loop iteration faulted: {ex.ToString()}");
+                    }
+                }
             })
+           .ContinueWith(t =>
             {
-                Services = { Protocol.AssemblyLoader.BindService(new AssemblyLoaderService(
-                    reloadManager, 
-                    log ?? (s => Debug.WriteLine(s))
-                )) },
-                Ports = { new ServerPort("0.0.0.0", Configuration.ListenPort, ServerCredentials.Insecure) }
-            };
-            
-            server.Start();
+                log($"socket loop faulted: {t.Exception}");
+            });
         }
     }
 }

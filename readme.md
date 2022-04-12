@@ -4,10 +4,9 @@ tbc facilitates patch-based c# hot reload for people who like hard work (and dep
 
 it's alpha quality by me for me
 
-[![Here's a video](https://i.imgur.com/IljtZDz.png)](https://ryandavisau.blob.core.windows.net/store/teebeecee.mp4?sp=r&st=2021-02-15T07:34:52Z&se=2026-01-31T15:34:52Z&spr=https&sv=2019-12-12&sr=b&sig=eW2DWnMw162dTqEN7DIAzrB6J6MdRWIBZKoRfO32XF8%3D "Here's a video")
-
-#### ⚠️ note: running on M1
-seems like the [grpc core](https://github.com/grpc/grpc/tree/master/src/csharp) peeps are unlikely to implement macos/arm64 support. The api for the new-and-now-recommended [grpc-dotnet](https://github.com/grpc/grpc-dotnet) is a little too different to for me to migrate to at the moment. In the meantime, you can run tbc.console using x64 dotnet/rosetta: `PROTOBUF_TOOLS_OS=macos PROTOBUF_TOOLS_CPU=x64 dotnet run -a x64 --framework net6.0`. Feels a tad slower than on intel - most notably on the first reload - but still zippy. 
+now with maui powers
+[![Here's a maui video](https://i.imgur.com/AKkcXaZ.png)](https://ryandavisau.blob.core.windows.net/store/teebeecee-maui.mp4?sv=2020-08-04&st=2022-04-13T06%3A53%3A20Z&se=2069-04-20T06%3A53%3A00Z&sr=b&sp=r&sig=vVw2wFzbDjcpCk2eOLqcFpffHnQuGEBBK5EwhCVotcc%3D)
+([here's an old video showing more stuff](https://ryandavisau.blob.core.windows.net/store/teebeecee.mp4?sp=r&st=2021-02-15T07:34:52Z&se=2026-01-31T15:34:52Z&spr=https&sv=2019-12-12&sr=b&sig=eW2DWnMw162dTqEN7DIAzrB6J6MdRWIBZKoRfO32XF8%3D "Here's a video"))
 
 # features
 
@@ -118,12 +117,14 @@ Since your `IReloadManager` is itself reloadable (provided it derives from `Relo
 
 ## debugging
 
-Since the incremental compiler builds directly off the source files you're working on, debugging reloaded code is possible. Nice!
+Since the incremental compiler builds directly off the source files you're working on, debugging reloaded code is possible. Nice! 
+VS for Mac seems to like to show the break higher in the callstack (at the first non-reloaded component), but you can select the current frame. Rider breaks in the expected place.
 
 # alpha quality
 
-I've only used this for myself but have used earlier incarnations on production-complexity apps. I've only tested on iOS.
+I've only used this for myself but on several production-complexity-level apps. I've only tested on iOS.
 
-Your mileage may vary. Messing with static classes probably won't work (`tree remove` them 🤠). Xaml files won't work (delete them 🤠🤠).
+Your mileage may vary. Messing with static classes probably won't work (`tree remove` them 🤠). Xaml files won't work (delete them 🤠🤠). Something that needs to be source generated won't work. If source generators are more common in maui, I'd see if it can be added.
 
-I used gRPC for the host/target interop. For some reason, to build with iOS you need to add [this](https://github.com/rdavisau/tbc/blob/main/src/samples/prism/tbc.sample.prism/tbc.sample.prism/tbc.sample.prism.iOS/tbc.sample.prism.iOS.csproj#L149-L170) to your csproj. [Maybe it will get fixed](https://github.com/grpc/grpc/issues/19172), maybe I'll swap gRPC for something else. 
+This used to use grpc.core for message interchange but it was not apple silicon friendly. I replaced grpc with a socket-based transport which hasn't yet had a huge amount of testing. 
+But now it's apple silicon friendly and with .NET maui, the simulator is apple silicon friendly too! Finally nirvana.

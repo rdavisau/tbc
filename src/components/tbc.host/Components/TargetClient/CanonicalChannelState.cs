@@ -1,3 +1,5 @@
+namespace Tbc.Host.Components.TargetClient;
+
 public enum CanonicalChannelState
 {
     /// <summary>
