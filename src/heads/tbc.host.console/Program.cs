@@ -11,7 +11,6 @@ using Tbc.Host;
 using Tbc.Host.Components.Abstractions;
 using Tbc.Host.Components.FileEnvironment.Models;
 using Tbc.Host.Components.TargetClient;
-using Tbc.Host.Components.TargetClient.GrpcCore;
 using tbc.host.console.ConsoleHost;
 
 namespace tbc.host.console
@@ -38,8 +37,7 @@ namespace tbc.host.console
                 Configurator
                     .ConfigureServices(configuration, withAssemblies: typeof(Program).Assembly,
                         configure: c => c.RegisterDelegate<Func<IRemoteClientDefinition, ITargetClient>>(
-                            sp => client
-                               => sp.GetRequiredService<Func<IRemoteClientDefinition, GrpcCoreTargetClient>>()(client)))
+                                    sp => client => sp.GetRequiredService<Func<IRemoteClientDefinition, SocketTargetClient>>()(client)))
                     .Resolve<IHost>()
                     .Run();
         }

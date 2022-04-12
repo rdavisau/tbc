@@ -4,5 +4,7 @@ namespace Tbc.Host.Components.FileEnvironment.Models
     {
         public string Address { get; set; }
         public int Port { get; set; }
+
+        public string HttpAddress => $"http://{Address}:{Port}";
     }
 }

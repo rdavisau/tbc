@@ -16,6 +16,6 @@ public interface ITargetClient : IDisposable
 
     Task<IAsyncEnumerable<AssemblyReference>> AssemblyReferences();
     Task<IAsyncEnumerable<ExecuteCommandRequest>> CommandRequests();
-    Task<Outcome> ExecAsync(ExecuteCommandRequest req);
-    Task<Outcome> LoadAssemblyAsync(LoadDynamicAssemblyRequest req);
+    Task<Outcome> RequestClientExecAsync(ExecuteCommandRequest req);
+    Task<Outcome> RequestClientLoadAssemblyAsync(LoadDynamicAssemblyRequest req);
 }

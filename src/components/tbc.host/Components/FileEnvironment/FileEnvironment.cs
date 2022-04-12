@@ -58,9 +58,10 @@ namespace Tbc.Host.Components.FileEnvironment
             await TryLoadLoadContext();
             
             Task.Factory.StartNew(SetupReferenceTracking, TaskCreationOptions.LongRunning);
-            
+
             FileWatcher
                 .Changes
+                .Where(_ => !Terminated)
                 .Select(IncrementalCompiler.StageFile)
                 .Where(x => x != null)
                 .SelectMany(SendAssemblyForReload)
@@ -73,7 +74,7 @@ namespace Tbc.Host.Components.FileEnvironment
             await Client.WaitForTerminalState();
 
             Terminated = true;
-            
+
             Logger.LogWarning("FileEnvironment for client {@Client} terminating", Client);
         }
 
@@ -184,7 +185,7 @@ namespace Tbc.Host.Components.FileEnvironment
                     : TryResolvePrimaryType(_primaryTypeHint)
             };
             
-            return await Client.LoadAssemblyAsync(req);
+            return await Client.RequestClientLoadAssemblyAsync(req);
         }
 
         public string TryResolvePrimaryType(string typeHint) 
@@ -234,7 +235,7 @@ namespace Tbc.Host.Components.FileEnvironment
                     foreach (var arg in args)
                         req.Args.Add(arg);
 
-                    var outcome = await Client.ExecAsync(req);
+                    var outcome = await Client.RequestClientExecAsync(req);
                     
                     Logger.LogInformation("{@Outcome}", outcome);
                 }

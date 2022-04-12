@@ -6,23 +6,22 @@
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageVersion>1.0.14</PackageVersion>
         <LangVersion>latest</LangVersion>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <DebugType>embedded</DebugType>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\tbc.core\tbc.core.csproj" />
+        <ProjectReference Include="..\tbc.core\tbc.core.csproj" />
     </ItemGroup>
-    
+
     <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.15.0" />
-    <PackageReference Include="Grpc.Core" Version="2.35.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.35.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+        <PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
+        <PackageReference Include="Polly" Version="7.2.3" />
+        <PackageReference Include="System.Reactive" Version="5.0.0" />
+        <PackageReference Include="System.Text.Json" Version="6.0.2" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     </ItemGroup>
-    
-    <ItemGroup>
-        <Protobuf Include="..\tbc.core\Protos\asm.proto" GrpcServices="Server" />
-    </ItemGroup>
-    
+
 </Project>

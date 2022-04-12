@@ -1,5 +1,5 @@
-dotnet publish -c Release -o output/win -r win-x64 -p:PublishSingleFile=true -p:DebugType=None src/heads/tbc.host.console/tbc.host.console.csproj
-dotnet publish -c Release -o output/macos -r osx-x64 -p:PublishSingleFile=true -p:DebugType=None src/heads/tbc.host.console/tbc.host.console.csproj
+dotnet publish -c Release -o output/win -r win-x64 -f net6.0 -p:PublishSingleFile=true -p:DebugType=None src/heads/tbc.host.console/tbc.host.console.csproj
+dotnet publish -c Release -o output/macos-x64 -r osx-x64 -f net6.0 -p:PublishSingleFile=true -p:DebugType=None src/heads/tbc.host.console/tbc.host.console.csproj
 
 dotnet build -c Release src/components/tbc.core/tbc.core.csproj
 dotnet build -c Release src/components/tbc.target/tbc.target.csproj

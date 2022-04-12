@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Tbc.Protocol;
+using Tbc.Core.Models;
 
 namespace Tbc.Host.Components.CommandProcessor.Models
 {

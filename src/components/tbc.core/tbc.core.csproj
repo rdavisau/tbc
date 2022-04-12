@@ -4,16 +4,15 @@
         <TargetFramework>netstandard2.1</TargetFramework>
         <RootNamespace>Tbc.Core</RootNamespace>
         <LangVersion>latest</LangVersion>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <DebugType>embedded</DebugType>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Google.Protobuf" Version="3.15.0" />
-      <PackageReference Include="Grpc.Core" Version="2.35.0" />
-      <PackageReference Include="Grpc.Tools" Version="2.35.0">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
-      <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.0-4.final" />
+      <PackageReference Include="MessagePack" Version="2.4.14-alpha" />
+      <PackageReference Include="Refit" Version="6.3.2" />
     </ItemGroup>
 
 </Project>

@@ -17,7 +17,7 @@ using Tbc.Host.Components.CommandProcessor.Models;
 using Tbc.Host.Components.FileEnvironment.Models;
 using Tbc.Host.Components.FileWatcher.Models;
 using Tbc.Host.Components.IncrementalCompiler.Models;
-using Tbc.Host.Components.TargetClient.GrpcCore;
+using Tbc.Host.Components.TargetClient;
 using Tbc.Host.Config;
 using Tbc.Host.Extensions;
 
@@ -28,7 +28,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
         private bool _disposing;
         
         private readonly AssemblyCompilationOptions _options;
-        private readonly GrpcCoreTargetClient _client;
+        private readonly ITargetClient _client;
         
         private readonly IFileSystem _fileSystem;
 
@@ -49,7 +49,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
         
         public IncrementalCompiler(
             AssemblyCompilationOptions options, 
-            IRemoteClientDefinition client, Func<IRemoteClientDefinition, GrpcCoreTargetClient> targetClientFactory, 
+            IRemoteClientDefinition client, Func<IRemoteClientDefinition, ITargetClient> targetClientFactory,
             IFileSystem fileSystem, ILogger<IncrementalCompiler> logger) : base(logger)
         {
             _options = options;
@@ -118,7 +118,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
                             Environment.NewLine, 
                             result.Diagnostics
                                 .Where(x => x.Severity == DiagnosticSeverity.Error)
-                                .Select(x => x.GetMessage()))); 
+                                .Select(x => $"{x.Location}: {x.GetMessage()}")));
 
                 return newC;
             });
