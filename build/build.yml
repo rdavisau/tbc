@@ -11,6 +11,11 @@ pool:
 
 steps:
 
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '6.0.202'
+    
 - task: CmdLine@2
   inputs:
     script: 'build/build.sh'
