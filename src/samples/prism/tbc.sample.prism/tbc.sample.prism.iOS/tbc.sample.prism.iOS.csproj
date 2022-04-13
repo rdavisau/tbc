@@ -126,8 +126,6 @@
     </ItemGroup>
     <ItemGroup>
       <PackageReference Include="DryIoc.dll" Version="4.5.0" />
-      <PackageReference Include="Google.Protobuf" Version="3.14.0" />
-      <PackageReference Include="Grpc.Core" Version="2.30.0" />
       <PackageReference Include="Prism.Core" Version="8.0.0.1909" />
       <PackageReference Include="Prism.DryIoc.Forms" Version="8.0.0.1909" />
       <PackageReference Include="Prism.Forms" Version="8.0.0.1909" />
@@ -141,32 +139,8 @@
       <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.7.0" />
       <PackageReference Include="System.Text.Encoding.CodePages" Version="4.5.1" />
       <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.3" />
-      <PackageReference Include="tbc.target" Version="0.0.20210216.10" />
+      <PackageReference Include="tbc.target" Version="0.0.20220413.3" />
       <PackageReference Include="Xamarin.Forms" Version="5.0.0.2012" />
     </ItemGroup>
     <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
-
-    <Target Name="GrpcCoreShim" BeforeTargets="CoreCompile">
-        <PropertyGroup>
-            <GrpcCoreTargetsRelativePath>$(NugetPackageRoot)\grpc.core\2.30.0\build\Xamarin.iOS10\</GrpcCoreTargetsRelativePath>
-        </PropertyGroup>
-        <ConvertToAbsolutePath Paths="$(GrpcCoreTargetsRelativePath)">
-            <Output TaskParameter="AbsolutePaths" PropertyName="GrpcCoreTargetsAbsPath" />
-        </ConvertToAbsolutePath>
-        <ItemGroup>
-            <NativeReference Remove="libgrpc_csharp_ext.a" />
-            <NativeReference Remove="libgrpc.a" />
-            <NativeReference Include="$(GrpcCoreTargetsAbsPath)..\..\native\ios\universal\libgrpc_csharp_ext.a">
-                <Kind>Static</Kind>
-                <ForceLoad>True</ForceLoad>
-                <IsCxx>True</IsCxx>
-            </NativeReference>
-            <NativeReference Include="$(GrpcCoreTargetsAbsPath)..\..\native\ios\universal\libgrpc.a">
-                <Kind>Static</Kind>
-                <ForceLoad>True</ForceLoad>
-                <IsCxx>True</IsCxx>
-            </NativeReference>
-        </ItemGroup>
-    </Target>
-    
 </Project>

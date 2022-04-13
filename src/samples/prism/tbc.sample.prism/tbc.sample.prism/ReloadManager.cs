@@ -1,17 +1,18 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DryIoc;
 using Prism.Navigation;
 using Prism.Services;
 using Serilog;
-using Tbc.Protocol;
+using Tbc.Core.Models;
 using tbc.sample.prism.Extensions;
 using Tbc.Target;
 using Tbc.Target.Interfaces;
 using Tbc.Target.Requests;
 using Xamarin.Forms;
-using static Tbc.Target.Extensions.TbcOutcome;
+using static Tbc.Core.Models.Outcome;
 
 namespace tbc.sample.prism
 {
@@ -105,11 +106,22 @@ namespace tbc.sample.prism
                 case "goto":
                     await Device.InvokeOnMainThreadAsync(
                         async () => await GotoPage(args.Any() ? args[0] : null, message:"where to my friend?"));
-                    return Success();
+                    return new Outcome { Success = true };
                                                 
                 default:
                     _logger.Warning("No logic to handle command \"{Command}\" with args {@Args}", command, args);
-                    return Failure($"No logic to handle command \"{command}\" with args {String.Join(", ", args)}");
+                    return new Outcome
+                    {
+                        Success = true,
+                        Messages = new List<OutcomeMessage>()
+                        {
+                            new OutcomeMessage
+                            {
+                                Message =
+                                    $"No logic to handle command \"{command}\" with args {String.Join(", ", args)}"
+                            }
+                        }
+                    };
             }
         }
 

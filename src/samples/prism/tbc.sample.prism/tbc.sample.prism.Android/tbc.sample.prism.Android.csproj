@@ -14,8 +14,7 @@
         <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
         <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
         <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
-        <AndroidUseLatestPlatformSdk>false</AndroidUseLatestPlatformSdk>
-        <TargetFrameworkVersion>v9.0</TargetFrameworkVersion>
+        <TargetFrameworkVersion>v11.0</TargetFrameworkVersion>
         <AndroidHttpClientHandlerType>Xamarin.Android.Net.AndroidClientHandler</AndroidHttpClientHandlerType>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -46,22 +45,18 @@
         <Reference Include="System.Xml" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.12.3" />
-        <PackageReference Include="Grpc.Core" Version="2.30.0" />
-        <PackageReference Include="Grpc.Tools" Version="2.30.0">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
         <PackageReference Include="Prism.DryIoc.Forms" Version="8.0.0.1909" />
         <PackageReference Include="Prism.Forms" Version="8.0.0.1909" />
         <PackageReference Include="Serilog" Version="2.10.0" />
         <PackageReference Include="Serilog.Sinks.Debug" Version="1.0.1" />
-        <PackageReference Include="tbc.target" Version="0.0.20210216.10" />
+        <PackageReference Include="tbc.target" Version="0.0.20220413.3" />
         <PackageReference Include="Xamarin.Android.Support.Design" Version="28.0.0.3" />
         <PackageReference Include="Xamarin.Android.Support.v7.AppCompat" Version="28.0.0.3" />
         <PackageReference Include="Xamarin.Android.Support.v4" Version="28.0.0.3" />
         <PackageReference Include="Xamarin.Android.Support.v7.CardView" Version="28.0.0.3" />
         <PackageReference Include="Xamarin.Android.Support.v7.MediaRouter" Version="28.0.0.3" />
+        <PackageReference Include="Xamarin.AndroidX.MediaRouter" Version="1.2.0" />
+        <PackageReference Include="Xamarin.AndroidX.Palette" Version="1.0.0.5" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="MainActivity.cs" />
@@ -81,7 +76,7 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\tbc.sample.prism\tbc.sample.prism.csproj">
-            <Project>{FEC29B52-B36E-43A7-9E04-5E6EA596E6DF}</Project>
+            <Project>{94CFA5B9-FF4C-4522-B116-7E942E7C727C}</Project>
             <Name>tbc.sample.prism</Name>
         </ProjectReference>
     </ItemGroup>
