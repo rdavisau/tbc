@@ -133,7 +133,7 @@ public class AssemblyLoaderService : ITbcTarget, ISendToRemote
                     AssemblyName = asm.FullName,
                     AssemblyLocation = asm.Location,
                     ModificationTime = new DateTimeOffset(new FileInfo(asm.Location).LastWriteTimeUtc, TimeSpan.Zero),
-                    PeBytes = await File.ReadAllBytesAsync(asm.Location)
+                    PeBytes = File.ReadAllBytes(asm.Location)
                 };
 
                 _log($"Will send {asm.FullName} - {sw.Elapsed}");

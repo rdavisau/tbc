@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Tbc.Core.Extensions;
 using Tbc.Core.Models;
 using Tbc.Core.Socket.Abstractions;
 using Tbc.Core.Socket.Extensions;
