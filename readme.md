@@ -120,11 +120,42 @@ Since your `IReloadManager` is itself reloadable (provided it derives from `Relo
 Since the incremental compiler builds directly off the source files you're working on, debugging reloaded code is possible. Nice! 
 VS for Mac seems to like to show the break higher in the callstack (at the first non-reloaded component), but you can select the current frame. Rider breaks in the expected place.
 
+## source generators
+
+Tested only on the latest Mvvm Community Toolkit preview, you might be able to use source generators with tbc. This is confgured by adding a `SourceGeneratorReferences` array to the 
+`AssemblyCompiler` configuration element. Here you can include references to dlls, nuget packages or csproj files.
+
+```
+"SourceGeneratorReferences": [
+
+    {
+      "Kind": "AssemblyPath",
+      "Reference": "/Users/rdavis/.nuget/packages/communitytoolkit.mvvm/8.0.0-preview3/analyzers/dotnet/roslyn4.0/cs/CommunityToolkit.Mvvm.SourceGenerators.dll"
+    },
+    
+    {
+      "Kind": "NuGetPackageReference",
+      "Reference": "CommunityToolkit.Mvvm",
+      "Context": "8.0.0-preview3"
+    },
+    
+    {
+      "Kind": "Csproj",
+      "Reference": "/Users/rdavis/Source/MyAppWithSourceGenerators/App1/App1/App1.iOS/App1.iOS.csproj"
+    },
+    
+ ]
+```
+
+* For an `AssemblyPath` reference, tbc will try to load the assembly and take any `ISourceGenerator` and `IIncrementalGenerator` types it can instantiate 
+* For a `NuGetPackageReference` reference, tbc will scan the local nuget package cache for the provided package/version folder and to try to find assemblies that might contain generators, then pass them to the `AssemblyPath` method
+* For a `Csproj` reference, tbc will parse the provided csproj file for nuget package references, then pass them to the `NuGetPackageReference` method.
+
 # alpha quality
 
-I've only used this for myself but on several production-complexity-level apps. I've only tested on iOS.
+I've only used this for myself but on several production-complexity-level apps. I've only used it heavily on iOS. At least the sample works on Android too.
 
-Your mileage may vary. Messing with static classes probably won't work (`tree remove` them 🤠). Xaml files won't work (delete them 🤠🤠). Something that needs to be source generated won't work. If source generators are more common in maui, I'd see if it can be added.
+Your mileage may vary. Messing with static classes probably won't work (`tree remove` them 🤠). Xaml files won't work (delete them 🤠🤠). Something that needs to be source generated might work with some effort (see source generators).
 
 This used to use grpc.core for message interchange but it was not apple silicon friendly. I replaced grpc with a socket-based transport which hasn't yet had a huge amount of testing. 
 But now it's apple silicon friendly and with .NET maui, the simulator is apple silicon friendly too! Finally nirvana.

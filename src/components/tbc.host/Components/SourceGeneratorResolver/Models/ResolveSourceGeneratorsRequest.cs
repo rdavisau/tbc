@@ -1,0 +1,3 @@
+namespace Tbc.Host.Components.SourceGeneratorResolver.Models;
+
+public record ResolveSourceGeneratorsRequest(SourceGeneratorReference Reference);

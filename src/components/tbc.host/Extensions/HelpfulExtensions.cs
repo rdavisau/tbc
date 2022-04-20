@@ -61,5 +61,8 @@ namespace Tbc.Host.Extensions
         
         public static HashSet<T> ToHashSet<T, U>(this IEnumerable<U> items, Func<U, T> selector)
             => new HashSet<T>(items.Select(selector));
+
+        public static IEnumerable<T> DistinctBySelector<T, U>(this IEnumerable<T> items, Func<T, U> selector)
+            => items.GroupBy(selector).Select(x => x.First());
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Abstractions;
@@ -17,6 +18,8 @@ using Tbc.Host.Components.CommandProcessor.Models;
 using Tbc.Host.Components.FileEnvironment.Models;
 using Tbc.Host.Components.FileWatcher.Models;
 using Tbc.Host.Components.IncrementalCompiler.Models;
+using Tbc.Host.Components.SourceGeneratorResolver;
+using Tbc.Host.Components.SourceGeneratorResolver.Models;
 using Tbc.Host.Components.TargetClient;
 using Tbc.Host.Config;
 using Tbc.Host.Extensions;
@@ -28,43 +31,66 @@ namespace Tbc.Host.Components.IncrementalCompiler
         private bool _disposing;
         
         private readonly AssemblyCompilationOptions _options;
-        private readonly ITargetClient _client;
         
         private readonly IFileSystem _fileSystem;
+        private readonly ISourceGeneratorResolver _sourceGeneratorResolver;
 
         private int _incrementalCount = 0;
         private readonly Guid _sessionGuid = Guid.NewGuid();
         private readonly object _lock = new object();
-        private string _identifier;
-        private IEnumerable<TbcCommand> _commands;
+        private readonly string _identifier;
 
         public string OutputPath { get; set; }
         public string RootPath { get; set; }
 
+        public ImmutableDictionary<SourceGeneratorReference,ResolveSourceGeneratorsResponse> SourceGeneratorResolution { get; set; }
+        public (IEnumerable<ISourceGenerator> Srcs, IEnumerable<IIncrementalGenerator> Incs) SourceGenerators { get; set; }
+        public bool AnySourceGenerators => SourceGenerators.Srcs.Any() || SourceGenerators.Incs.Any();
+        
         public CSharpCompilation CurrentCompilation { get; set; }
-        public Dictionary<string, SyntaxTree> RawTrees { get; } = new Dictionary<string, SyntaxTree>();
+        public Dictionary<string, SyntaxTree> RawTrees { get; } = new();
 
         public List<string> StagedFiles
             => CurrentCompilation.SyntaxTrees.Select(x => x.FilePath).ToList();
         
         public IncrementalCompiler(
+            string clientIdentifier,
             AssemblyCompilationOptions options, 
-            IRemoteClientDefinition client, Func<IRemoteClientDefinition, ITargetClient> targetClientFactory,
-            IFileSystem fileSystem, ILogger<IncrementalCompiler> logger) : base(logger)
+            IFileSystem fileSystem, ILogger<IncrementalCompiler> logger,
+            ISourceGeneratorResolver sourceGeneratorResolver
+        ) : base(logger)
         {
             _options = options;
             _fileSystem = fileSystem;
-            _client = targetClientFactory(client);
+            _sourceGeneratorResolver = sourceGeneratorResolver;
+            _identifier = clientIdentifier;
 
             var cscOptions = new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
                 optimizationLevel: options.Debug ? OptimizationLevel.Debug : OptimizationLevel.Release,
                 allowUnsafe: true);
 
+            SourceGeneratorResolution = ResolveSourceGenerators();
+            SourceGenerators = 
+                (SourceGeneratorResolution.SelectMany(x => x.Value.SourceGenerators).DistinctBySelector(x => x.GetType()).ToList(),
+                 SourceGeneratorResolution.SelectMany(x => x.Value.IncrementalGenerators).DistinctBySelector(x => x.GetType()).ToList()); 
+            
+            Logger.LogInformation("Source Generator Resolution: {Count} generator(s)", SourceGeneratorResolution);
+            foreach (var resolutionOutcome in SourceGeneratorResolution)
+                Logger.LogDebug(
+                    "Reference {@Reference}, Diagnostics: {@Diagnostics}, " +
+                    "Source Generators: {@SourceGenerators}, Incremental Generators: {@IncrementalGenerators}", 
+                    resolutionOutcome.Key, resolutionOutcome.Value.Diagnostics, resolutionOutcome.Value.SourceGenerators, resolutionOutcome.Value.IncrementalGenerators);
+            
             CurrentCompilation =
                 CSharpCompilation.Create("r2", options: cscOptions);
         }
-        
+
+        private ImmutableDictionary<SourceGeneratorReference, ResolveSourceGeneratorsResponse> ResolveSourceGenerators()
+            => Enumerable.Aggregate(_options.SourceGeneratorReferences,
+                ImmutableDictionary.Create<SourceGeneratorReference, ResolveSourceGeneratorsResponse>(),
+                (curr, next) => curr.Add(next, _sourceGeneratorResolver.ResolveSourceGenerators(new(next)).Result));
+
         public EmittedAssembly StageFile(ChangedFile file, bool silent = false)
         {
             var sw = Stopwatch.StartNew();
@@ -80,14 +106,14 @@ namespace Tbc.Host.Components.IncrementalCompiler
                         .WithLanguageVersion(LanguageVersion.Preview)
                         .WithKind(SourceCodeKind.Regular)
                         .WithPreprocessorSymbols(_options.PreprocessorSymbols.ToArray()),
-                    path: file.Path,
+                    path: file.Path, 
                     Encoding.Default);
 
             EmittedAssembly emittedAssembly = null;
             
             WithCompilation(c =>
             {
-                var newC = RawTrees.TryGetValue(file.Path, out var oldSyntaxTree)
+                var newCompilation = RawTrees.TryGetValue(file.Path, out var oldSyntaxTree)
                     ? c.ReplaceSyntaxTree(oldSyntaxTree, syntaxTree)
                     : c.AddSyntaxTrees(syntaxTree);
 
@@ -99,10 +125,28 @@ namespace Tbc.Host.Components.IncrementalCompiler
                         "Stage '{FileName}' without emit, Duration: {Duration:N0}ms, Types: [ {Types} ]",
                         file, sw.ElapsedMilliseconds, syntaxTree.GetContainedTypes());
                     
-                    return newC;
+                    return newCompilation;
+                }
+
+                // keep a separate source generated compilation so we don't poison the raw tree with generated content
+                Compilation? sourceGeneratedCompilation = null;
+                if (AnySourceGenerators)
+                {
+                    var (srcs, incs) = SourceGenerators;
+                    var driver = 
+                        CSharpGeneratorDriver.Create(incs.ToArray())
+                            .AddGenerators(srcs.ToImmutableArray())
+                            .WithUpdatedParseOptions(new CSharpParseOptions(LanguageVersion.Preview, preprocessorSymbols: _options.PreprocessorSymbols));
+                    
+                    driver.RunGeneratorsAndUpdateCompilation(
+                        newCompilation, out sourceGeneratedCompilation, out var generatorDiagnostics);
+                    
+                    if (generatorDiagnostics.Any())
+                        Logger.LogWarning("Applying source generators resulted in diagnostics: {@Diagnostics}", 
+                            generatorDiagnostics);
                 }
                 
-                var result = EmitAssembly(newC, out emittedAssembly);
+                var result = EmitAssembly(sourceGeneratedCompilation ?? newCompilation, out emittedAssembly);
 
                 if (!String.IsNullOrWhiteSpace(_options.WriteAssembliesPath)) 
                     WriteEmittedAssembly(emittedAssembly);
@@ -115,18 +159,18 @@ namespace Tbc.Host.Components.IncrementalCompiler
                     result.Success 
                         ? "" 
                         : String.Join(
-                            Environment.NewLine, 
+                            Environment.NewLine,
                             result.Diagnostics
                                 .Where(x => x.Severity == DiagnosticSeverity.Error)
                                 .Select(x => $"{x.Location}: {x.GetMessage()}")));
 
-                return newC;
+                return newCompilation;
             });
             
             return emittedAssembly;
         }
         
-        public EmitResult EmitAssembly(CSharpCompilation compilation, out EmittedAssembly emittedAssembly)
+        public EmitResult EmitAssembly(Compilation compilation, out EmittedAssembly emittedAssembly)
         {
             var asmStream = new MemoryStream();
             var pdbStream = new MemoryStream();
@@ -275,11 +319,10 @@ namespace Tbc.Host.Components.IncrementalCompiler
         public void Dispose()
         {
             _disposing = true;
-            _client.Dispose();
         }
 
         string IExposeCommands.Identifier 
-            => $"inc-{_client.ClientDefinition.Address}-{_client.ClientDefinition.Port}";
+            => $"inc-{_identifier}";
 
         IEnumerable<TbcCommand> IExposeCommands.Commands => new List<TbcCommand>
         {

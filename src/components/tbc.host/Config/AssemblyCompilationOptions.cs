@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Tbc.Host.Components.SourceGeneratorResolver;
+using Tbc.Host.Components.SourceGeneratorResolver.Models;
 
 namespace Tbc.Host.Config
 {
@@ -10,5 +12,6 @@ namespace Tbc.Host.Config
         public List<string> PreprocessorSymbols { get; set; } 
             = new List<string>();
         public string WriteAssembliesPath { get; set; }
+        public List<SourceGeneratorReference> SourceGeneratorReferences { get; set; } = new();
     }
 }

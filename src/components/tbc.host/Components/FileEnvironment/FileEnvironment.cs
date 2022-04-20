@@ -32,13 +32,13 @@ namespace Tbc.Host.Components.FileEnvironment
         public FileEnvironment(IRemoteClientDefinition client,
             IFileWatcher fileWatcher, ICommandProcessor commandProcessor,
             Func<IRemoteClientDefinition, ITargetClient> targetClientFactory,
-            Func<IRemoteClientDefinition, IIncrementalCompiler> incrementalCompilerFactory,
+            Func<string, IIncrementalCompiler> incrementalCompilerFactory,
             ILogger<FileEnvironment> logger) : base(logger)
         {
             Client = targetClientFactory(client);
             CommandProcessor = commandProcessor;
             FileWatcher = fileWatcher;
-            IncrementalCompiler = incrementalCompilerFactory(client);
+            IncrementalCompiler = incrementalCompilerFactory($"{client.Address}:{client.Port}");
             IncrementalCompiler.RootPath = FileWatcher.WatchPath;
         }
 
