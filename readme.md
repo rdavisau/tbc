@@ -122,7 +122,7 @@ VS for Mac seems to like to show the break higher in the callstack (at the first
 
 ## source generators
 
-Tested only on the latest Mvvm Community Toolkit preview, you might be able to use source generators with tbc. This is confgured by adding a `SourceGeneratorReferences` array to the 
+Tested only on the latest Mvvm Community Toolkit preview, you might be able to use source generators with tbc. This is configured by adding a `SourceGeneratorReferences` array to the 
 `AssemblyCompiler` configuration element. Here you can include references to dlls, nuget packages or csproj files.
 
 ```
@@ -150,6 +150,33 @@ Tested only on the latest Mvvm Community Toolkit preview, you might be able to u
 * For an `AssemblyPath` reference, tbc will try to load the assembly and take any `ISourceGenerator` and `IIncrementalGenerator` types it can instantiate 
 * For a `NuGetPackageReference` reference, tbc will scan the local nuget package cache for the provided package/version folder and to try to find assemblies that might contain generators, then pass them to the `AssemblyPath` method
 * For a `Csproj` reference, tbc will parse the provided csproj file for nuget package references, then pass them to the `NuGetPackageReference` method.
+
+## global usings
+
+You can configure global usings by adding a `GlobalUsingsSources` array to the`AssemblyCompiler` configuration element.
+Here you can include 'string lists' and/or search paths.
+
+```
+"GlobalUsingsSources": [
+
+   { 
+      "Kind": "Text", 
+      "Reference": "My.Namespace.A;My.Namespace.B" 
+   },
+      
+   { 
+      "Kind": "SearchPath", 
+      "Reference": "/Users/rdavis/Source/MyAppWithGlobalUsings/App1/App1/obj/Debug/", 
+      "Context": "LastModified" 
+   },
+
+]
+```
+
+* For a `Text` source, tbc will split on ';' and add all the entries as usings
+* For a `SearchPath` reference, tbc will scan the provided search path for `*.GlobalUsings.g.cs`. 
+ If `Context` is "`LastModified`" or not specified, tbc will pick the most recently updated file of the files found. If `Context` is "`Merge`", 
+ tbc will merge the contents of the files found.
 
 # alpha quality
 

@@ -17,6 +17,8 @@ using Tbc.Host.Components.Abstractions;
 using Tbc.Host.Components.CommandProcessor.Models;
 using Tbc.Host.Components.FileEnvironment.Models;
 using Tbc.Host.Components.FileWatcher.Models;
+using Tbc.Host.Components.GlobalUsingsResolver;
+using Tbc.Host.Components.GlobalUsingsResolver.Models;
 using Tbc.Host.Components.IncrementalCompiler.Models;
 using Tbc.Host.Components.SourceGeneratorResolver;
 using Tbc.Host.Components.SourceGeneratorResolver.Models;
@@ -34,6 +36,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
         
         private readonly IFileSystem _fileSystem;
         private readonly ISourceGeneratorResolver _sourceGeneratorResolver;
+        private readonly IGlobalUsingsResolver _globalUsingsResolver;
 
         private int _incrementalCount = 0;
         private readonly Guid _sessionGuid = Guid.NewGuid();
@@ -46,23 +49,28 @@ namespace Tbc.Host.Components.IncrementalCompiler
         public ImmutableDictionary<SourceGeneratorReference,ResolveSourceGeneratorsResponse> SourceGeneratorResolution { get; set; }
         public (IEnumerable<ISourceGenerator> Srcs, IEnumerable<IIncrementalGenerator> Incs) SourceGenerators { get; set; }
         public bool AnySourceGenerators => SourceGenerators.Srcs.Any() || SourceGenerators.Incs.Any();
+
+        public ResolveGlobalUsingsResponse GlobalUsingResolution { get; set; }
         
         public CSharpCompilation CurrentCompilation { get; set; }
         public Dictionary<string, SyntaxTree> RawTrees { get; } = new();
 
+
         public List<string> StagedFiles
             => CurrentCompilation.SyntaxTrees.Select(x => x.FilePath).ToList();
-        
+
         public IncrementalCompiler(
             string clientIdentifier,
             AssemblyCompilationOptions options, 
             IFileSystem fileSystem, ILogger<IncrementalCompiler> logger,
-            ISourceGeneratorResolver sourceGeneratorResolver
+            ISourceGeneratorResolver sourceGeneratorResolver,
+            IGlobalUsingsResolver globalUsingsResolver
         ) : base(logger)
         {
             _options = options;
             _fileSystem = fileSystem;
             _sourceGeneratorResolver = sourceGeneratorResolver;
+            _globalUsingsResolver = globalUsingsResolver;
             _identifier = clientIdentifier;
 
             var cscOptions = new CSharpCompilationOptions(
@@ -73,7 +81,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
             SourceGeneratorResolution = ResolveSourceGenerators();
             SourceGenerators = 
                 (SourceGeneratorResolution.SelectMany(x => x.Value.SourceGenerators).DistinctBySelector(x => x.GetType()).ToList(),
-                 SourceGeneratorResolution.SelectMany(x => x.Value.IncrementalGenerators).DistinctBySelector(x => x.GetType()).ToList()); 
+                 SourceGeneratorResolution.SelectMany(x => x.Value.IncrementalGenerators).DistinctBySelector(x => x.GetType()).ToList());
             
             Logger.LogInformation("Source Generator Resolution: {Count} generator(s)", SourceGeneratorResolution);
             foreach (var resolutionOutcome in SourceGeneratorResolution)
@@ -84,6 +92,20 @@ namespace Tbc.Host.Components.IncrementalCompiler
             
             CurrentCompilation =
                 CSharpCompilation.Create("r2", options: cscOptions);
+            
+            GlobalUsingResolution =
+                _globalUsingsResolver.ResolveGlobalUsings(new ResolveGlobalUsingsRequest(options.GlobalUsingsSources)).Result;
+            
+            if (GlobalUsingResolution.Usings.Any() && GlobalUsingResolution.UsingsSource is { } gus)
+                CurrentCompilation = CurrentCompilation.AddSyntaxTrees(
+                    CSharpSyntaxTree.ParseText(
+                        gus,
+                        CSharpParseOptions.Default
+                           .WithLanguageVersion(LanguageVersion.Preview)
+                           .WithKind(SourceCodeKind.Regular)
+                           .WithPreprocessorSymbols(_options.PreprocessorSymbols.ToArray()),
+                        path: "",
+                        Encoding.Default));
         }
 
         private ImmutableDictionary<SourceGeneratorReference, ResolveSourceGeneratorsResponse> ResolveSourceGenerators()

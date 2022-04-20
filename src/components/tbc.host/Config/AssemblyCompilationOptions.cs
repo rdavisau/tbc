@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Tbc.Host.Components.GlobalUsingsResolver;
+using Tbc.Host.Components.GlobalUsingsResolver.Models;
 using Tbc.Host.Components.SourceGeneratorResolver;
 using Tbc.Host.Components.SourceGeneratorResolver.Models;
 
@@ -13,5 +15,6 @@ namespace Tbc.Host.Config
             = new List<string>();
         public string WriteAssembliesPath { get; set; }
         public List<SourceGeneratorReference> SourceGeneratorReferences { get; set; } = new();
+        public List<GlobalUsingsSource> GlobalUsingsSources { get; set; } = new();
     }
 }
