@@ -16,5 +16,6 @@ namespace Tbc.Host.Config
         public string WriteAssembliesPath { get; set; }
         public List<SourceGeneratorReference> SourceGeneratorReferences { get; set; } = new();
         public List<GlobalUsingsSource> GlobalUsingsSources { get; set; } = new();
+        public AssemblyFixerOptions FixerOptions { get; set; }
     }
 }

@@ -153,7 +153,7 @@ Tested only on the latest Mvvm Community Toolkit preview, you might be able to u
 
 ## global usings
 
-You can configure global usings by adding a `GlobalUsingsSources` array to the`AssemblyCompiler` configuration element.
+You can configure global usings by adding a `GlobalUsingsSources` array to the `AssemblyCompiler` configuration element.
 Here you can include 'string lists' and/or search paths.
 
 ```
@@ -178,11 +178,21 @@ Here you can include 'string lists' and/or search paths.
  If `Context` is "`LastModified`" or not specified, tbc will pick the most recently updated file of the files found. If `Context` is "`Merge`", 
  tbc will merge the contents of the files found.
 
+## compilation fixers
+
+tbc (host) has the concept of 'compilation fixers' that may run after a failed incremental compilation to try to make it not fail.
+Compilation fixers can make a transient update to the compilation bundle in order to address issues that prevent compilation. For example, the `AmbiguousInvocationFixer`
+ targets `CS121` and renames reloaded extension methods so that they are distinct from the originally compiled extension method. Others might be added in the future. To enable fixers, add 
+```
+"FixerOptions": { "Enabled" : true }
+```
+to the  `AssemblyCompiler` configuration element.
+
 # alpha quality
 
 I've only used this for myself but on several production-complexity-level apps. I've only used it heavily on iOS. At least the sample works on Android too.
 
-Your mileage may vary. Messing with static classes probably won't work (`tree remove` them 🤠). Xaml files won't work (delete them 🤠🤠). Something that needs to be source generated might work with some effort (see source generators).
+Your mileage may vary. Messing with static classes might work (if you enable fixers 🤠). Xaml files won't work (delete them 🤠🤠). Something that needs to be source generated might work with some effort (see source generators).
 
 This used to use grpc.core for message interchange but it was not apple silicon friendly. I replaced grpc with a socket-based transport which hasn't yet had a huge amount of testing. 
 But now it's apple silicon friendly and with .NET maui, the simulator is apple silicon friendly too! Finally nirvana.
