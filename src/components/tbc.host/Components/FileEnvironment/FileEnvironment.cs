@@ -126,6 +126,10 @@ namespace Tbc.Host.Components.FileEnvironment
 
                 foreach (var refSeen in existingReferences.Select(x => x.AssemblyLocation))
                     seen.Add(refSeen);
+
+                // allow a little time for references to come back <:-)
+                // should have client tell us when all current dependencies have been sent
+                Task.Delay(TimeSpan.FromSeconds(.33)).ContinueWith(_ => IncrementalCompiler.DoWarmup());
             }
 
             if (targetHello.UseDependencyCache && targetHello.ApplicationIdentifier is { } appIdentifier)

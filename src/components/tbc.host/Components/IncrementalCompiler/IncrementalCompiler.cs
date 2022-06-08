@@ -295,6 +295,26 @@ namespace Tbc.Host.Components.IncrementalCompiler
                 return false;
             }
         }
+
+        public void DoWarmup()
+        {
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                StageFile(new ChangedFile {
+                    Path = "warmup",
+                    Contents = "public class Warm { public string Warmup { get; set; } }",
+                    ChangedAt = DateTimeOffset.UtcNow });
+
+                foreach (var c in _compilationFixers.Values)
+                    c.TryFix(CurrentCompilation, new(), out _);
+            }
+            catch (Exception ex) { Logger.LogError(ex, "Warmup"); }
+
+            TryRemoveTree("warmup");
+
+            Logger.LogInformation("Warmup emit completed in {Elapsed}", sw.Elapsed);
+        }
         
         private void WithCompilation(Func<CSharpCompilation, CSharpCompilation> action)
         {

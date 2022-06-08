@@ -17,5 +17,6 @@ namespace Tbc.Host.Components.IncrementalCompiler
         void ClearTrees();
         void PrintTrees(bool withDetail);
         string TryResolvePrimaryType(string typeHint);
+        void DoWarmup();
     }
 }
