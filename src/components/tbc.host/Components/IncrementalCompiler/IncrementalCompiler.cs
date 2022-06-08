@@ -19,6 +19,7 @@ using Tbc.Host.Components.FileEnvironment.Models;
 using Tbc.Host.Components.FileWatcher.Models;
 using Tbc.Host.Components.GlobalUsingsResolver;
 using Tbc.Host.Components.GlobalUsingsResolver.Models;
+using Tbc.Host.Components.IncrementalCompiler.Fixers;
 using Tbc.Host.Components.IncrementalCompiler.Models;
 using Tbc.Host.Components.SourceGeneratorResolver;
 using Tbc.Host.Components.SourceGeneratorResolver.Models;
@@ -37,6 +38,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
         private readonly IFileSystem _fileSystem;
         private readonly ISourceGeneratorResolver _sourceGeneratorResolver;
         private readonly IGlobalUsingsResolver _globalUsingsResolver;
+        private readonly ImmutableDictionary<int,ICompilationFixer> _compilationFixers;
 
         private int _incrementalCount = 0;
         private readonly Guid _sessionGuid = Guid.NewGuid();
@@ -64,7 +66,8 @@ namespace Tbc.Host.Components.IncrementalCompiler
             AssemblyCompilationOptions options, 
             IFileSystem fileSystem, ILogger<IncrementalCompiler> logger,
             ISourceGeneratorResolver sourceGeneratorResolver,
-            IGlobalUsingsResolver globalUsingsResolver
+            IGlobalUsingsResolver globalUsingsResolver,
+            IEnumerable<ICompilationFixer> fixers
         ) : base(logger)
         {
             _options = options;
@@ -72,6 +75,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
             _sourceGeneratorResolver = sourceGeneratorResolver;
             _globalUsingsResolver = globalUsingsResolver;
             _identifier = clientIdentifier;
+            _compilationFixers = fixers.ToImmutableDictionary(x => x.ErrorCode, x => x);
 
             var cscOptions = new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
@@ -167,8 +171,14 @@ namespace Tbc.Host.Components.IncrementalCompiler
                         Logger.LogWarning("Applying source generators resulted in diagnostics: {@Diagnostics}", 
                             generatorDiagnostics);
                 }
-                
+
+                var compilation = (CSharpCompilation)(sourceGeneratedCompilation ?? newCompilation);
                 var result = EmitAssembly(sourceGeneratedCompilation ?? newCompilation, out emittedAssembly);
+
+                if (!result.Success 
+                    && _options.FixerOptions.Enabled 
+                    && TryApplyCompilationFixers(result, compilation, out var fixedResult, out emittedAssembly))
+                    result = fixedResult;
 
                 if (!String.IsNullOrWhiteSpace(_options.WriteAssembliesPath)) 
                     WriteEmittedAssembly(emittedAssembly);
@@ -191,7 +201,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
             
             return emittedAssembly;
         }
-        
+
         public EmitResult EmitAssembly(Compilation compilation, out EmittedAssembly emittedAssembly)
         {
             var asmStream = new MemoryStream();
@@ -201,7 +211,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
                 _options.EmitDebugInformation
                     ? compilation.Emit(
                         asmStream,
-                        pdbStream, options: new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb))
+                        pdbStream, options: new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb, tolerateErrors: true))
                     : compilation.Emit(asmStream);
 
             emittedAssembly = new EmittedAssembly
@@ -228,19 +238,77 @@ namespace Tbc.Host.Components.IncrementalCompiler
         }
 
         public void AddMetadataReference(AssemblyReference asm)
-            => WithCompilation(c =>
+            => WithCompilation(c => c.AddReferences(MetadataReference.CreateFromImage(asm.PeBytes)));
+
+        private bool TryApplyCompilationFixers(EmitResult result, CSharpCompilation currentCompilation, out EmitResult? newResult, out EmittedAssembly? emittedAssembly)
+        {
+            newResult = null;
+            emittedAssembly = null;
+            
+            var errorDiagnosticGroups =
+                result.Diagnostics.Where(x => x.Severity == DiagnosticSeverity.Error).GroupBy(x => x.Code)
+                   .ToList();
+            
+            var anyApplied = false;
+            foreach (var errorGroup in errorDiagnosticGroups)
             {
-                /*
-                Logger.LogInformation(
-                    "Adding reference to '{AssemblyLocation}' for client '{Client}'",
-                    Path.GetFileName(asm.AssemblyLocation), _client.Client);
-                */
-                return c.AddReferences(MetadataReference.CreateFromImage(asm.PeBytes));
-            });
+                if (_compilationFixers.TryGetValue(errorGroup.Key, out var fixer))
+                {
+                    try
+                    {
+                        if (fixer.TryFix(currentCompilation, errorGroup.ToList(), out var newlyFixedCompilation))
+                        {
+                            anyApplied = true;
+                            
+                            currentCompilation = newlyFixedCompilation;
+
+                            Logger.LogInformation(
+                                "Fixer {Fixer} reports successful application for diagnostics {@Diagnostics}",
+                                fixer.GetType().Name, errorGroup.Select(x => (x.Location, x.GetMessage())).ToList());
+                        }
+                        else throw new Exception($"Fixer {fixer.GetType().Name} did not report success");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError(ex,
+                            "An error occurred when attempting to apply fixer {Fixer} for diagnostics {@Diagnostics}",
+                            fixer.GetType().Name, errorGroup.Select(x => (x.Location, x.GetMessage())).ToList());
+                    }
+                }
+            }
+
+            if (!anyApplied)
+                return false;
+
+            var maybeFixedResult = EmitAssembly(currentCompilation, out emittedAssembly);
+            if (maybeFixedResult.Success)
+            {
+                Logger.LogInformation("After applying fixers, compilation was successful");
+                newResult = maybeFixedResult;
+
+                return true;
+            }
+            else
+            {
+                Logger.LogError("Compilation was unsuccessful even after applying fixers");
+
+                return false;
+            }
+        }
         
         private void WithCompilation(Func<CSharpCompilation, CSharpCompilation> action)
         {
             lock (_lock) CurrentCompilation = action(CurrentCompilation);
+        }
+
+        private T WithCompilation<T>(Func<CSharpCompilation, (CSharpCompilation, T)> action)
+        {
+            lock (_lock)
+            {
+                var (c, r) = action(CurrentCompilation);
+                CurrentCompilation = c;
+                return r;
+            }
         }
 
         public void ClearReferences() =>

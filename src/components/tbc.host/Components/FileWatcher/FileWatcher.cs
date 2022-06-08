@@ -41,8 +41,8 @@ namespace Tbc.Host.Components.FileWatcher
                 WatchPath = _fileSystem.Path.Combine(Environment.CurrentDirectory, path);
             
             Logger.LogInformation("Watching files under path {Path}", WatchPath);
-            
-            var dir = _fileSystem.Path.GetDirectoryName(WatchPath);
+
+            var dir = WatchPath;
             var ofsw = 
                 new ObservableFileSystemWatcher(
                     new FileSystemWatcher(dir, mask ?? "*.cs")

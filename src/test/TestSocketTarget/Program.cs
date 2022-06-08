@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.IO.Abstractions;
+using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,13 +9,14 @@ using Tbc.Core.Socket;
 using Tbc.Host.Components.FileEnvironment.Models;
 using Tbc.Host.Components.TargetClient;
 using Tbc.Target;
+using Tbc.Target.Config;
 using Tbc.Target.Implementation;
 using Tbc.Target.Requests;
 using TestSocketTarget;
 
 var rm = new MyReloadManager();
 var listener = new TcpListener(IPAddress.Any, 0);
-var handler = new AssemblyLoaderService(rm, Console.WriteLine);
+var handler = new AssemblyLoaderService(TargetConfiguration.Default(applicationIdentifier:"my-app"), rm, Console.WriteLine);
 listener.Start();
 
 Task.Run(async () =>
@@ -45,7 +47,8 @@ var logger = serviceProvider.GetRequiredService<ILogger<SocketTargetClient>>();
 
 var host = new SocketTargetClient(
     logger,
-    new RemoteClient { Address = "localhost", Port = ep.Port });
+    new RemoteClient { Address = "localhost", Port = ep.Port },
+    new FileSystem());
 
 host.ClientChannelState.Subscribe(x => Console.WriteLine(x));
 
@@ -53,10 +56,40 @@ Console.WriteLine("Waiting for connection");
 await host.WaitForConnection().ConfigureAwait(false);
 
 Console.WriteLine("Got connection");
+var targetHello = await host.Hello(new HostHello { SharedHostFilePath = Path.GetTempFileName() });
 
-Task.Run(async () => host.AssemblyReferences());
+var existingReferences = new List<AssemblyReference>();
+
+if (targetHello.CanAccessSharedHostFile)
+{
+    var files = Directory.GetFiles(targetHello.RootAssemblyPath, "*.dll");
+    foreach (var f in files)
+    {
+        var reference = new AssemblyReference
+        {
+            AssemblyLocation = f,
+            ModificationTime = new FileInfo(f).LastWriteTime,
+            PeBytes = await File.ReadAllBytesAsync(f)
+        };
+
+        existingReferences.Add(reference);
+    }
+}
+
+var lateReferences = new List<AssemblyReference>();
+Task.Run(async () =>
+{
+    await foreach (var lateReference in await host.AssemblyReferences(existingReferences))
+    {
+        lateReferences.Add(lateReference);
+        var a = 1;
+    }
+});
+
+await Task.Delay(TimeSpan.FromSeconds(6));
 
 Console.ReadLine();
+
 
 
 namespace TestSocketTarget

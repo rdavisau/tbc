@@ -16,7 +16,7 @@
     <ItemGroup>
         <PackageReference Include="DryIoc.Microsoft.DependencyInjection" Version="5.1.0" />
         <PackageReference Include="IgnoresAccessChecksToGenerator" Version="0.5.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.0.0-4.final" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.0-1.final" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
         <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />

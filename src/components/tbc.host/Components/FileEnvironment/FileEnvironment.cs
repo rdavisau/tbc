@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -28,15 +29,17 @@ namespace Tbc.Host.Components.FileEnvironment
         public ICommandProcessor CommandProcessor { get; }
         public IFileWatcher FileWatcher { get; }
         public IIncrementalCompiler IncrementalCompiler { get; }
-        
+        public IFileSystem FileSystem { get; set; }
+
         public FileEnvironment(IRemoteClientDefinition client,
             IFileWatcher fileWatcher, ICommandProcessor commandProcessor,
             Func<IRemoteClientDefinition, ITargetClient> targetClientFactory,
             Func<string, IIncrementalCompiler> incrementalCompilerFactory,
-            ILogger<FileEnvironment> logger) : base(logger)
+            ILogger<FileEnvironment> logger, IFileSystem fileSystem) : base(logger)
         {
             Client = targetClientFactory(client);
             CommandProcessor = commandProcessor;
+            FileSystem = fileSystem;
             FileWatcher = fileWatcher;
             IncrementalCompiler = incrementalCompilerFactory($"{client.Address}:{client.Port}");
             IncrementalCompiler.RootPath = FileWatcher.WatchPath;
@@ -109,9 +112,26 @@ namespace Tbc.Host.Components.FileEnvironment
         {
             Logger.LogInformation("Setting up reference tracking for client {Client}", Client);
             IncrementalCompiler.ClearReferences();
+
             var seen = new HashSet<string>();
-            
-            var iterator = await Client.AssemblyReferences();
+
+            var tempFilePath = FileSystem.Path.GetTempFileName();
+            var targetHello = await Client.Hello(new HostHello { SharedHostFilePath = tempFilePath });
+
+            var sharedFilesystem = targetHello.CanAccessSharedHostFile;
+            var existingReferences = new List<AssemblyReference>();
+            if (sharedFilesystem && targetHello.UseSharedFilesystemDependencyResolution)
+            {
+                await AddSharedFilesystemReference(targetHello, existingReferences);
+
+                foreach (var refSeen in existingReferences.Select(x => x.AssemblyLocation))
+                    seen.Add(refSeen);
+            }
+
+            if (targetHello.UseDependencyCache && targetHello.ApplicationIdentifier is { } appIdentifier)
+                ProcessDependencyCache(appIdentifier);
+
+            var iterator = await Client.AssemblyReferences(existingReferences);
             try
             {
                 await iterator.ForEachAsync(async asm =>
@@ -119,14 +139,22 @@ namespace Tbc.Host.Components.FileEnvironment
                     if (Terminated)
                         return;
 
-                    if (seen.Contains(asm.AssemblyName))
+                    if (seen.Contains(asm.AssemblyName) ||
+                        (sharedFilesystem && !String.IsNullOrWhiteSpace(asm.AssemblyLocation) && seen.Contains(asm.AssemblyLocation)))
+                    {
+                        Logger.LogInformation("Not adding reference at {Path} because it has already been seen", asm.AssemblyLocation);
+
                         return;
+                    }
                     else
                         seen.Add(asm.AssemblyName);
 
                     Logger.LogInformation(
                         "Adding reference to {AssemblyName} from {AssemblyLocation} for client {Client}",
                         asm.AssemblyName, asm.AssemblyLocation, Client.ClientDefinition);
+
+                    if (sharedFilesystem && targetHello.UseSharedFilesystemDependencyResolution && asm.PeBytes is null)
+                        asm = asm with { PeBytes = await FileSystem.File.ReadAllBytesAsync(asm.AssemblyLocation) };
 
                     IncrementalCompiler.AddMetadataReference(asm);
                 });
@@ -137,7 +165,7 @@ namespace Tbc.Host.Components.FileEnvironment
                     Logger.LogError(ex, nameof(SetupReferenceTracking));
             }
         }
-        
+
         public async Task SetupCommandListening()
         {
             Logger.LogInformation("Setting up command listening for client {Client}", Client);
@@ -293,6 +321,30 @@ namespace Tbc.Host.Components.FileEnvironment
 
         public IEnumerable<IExposeCommands> Components 
             => new object [] { IncrementalCompiler, FileWatcher }.OfType<IExposeCommands>();
+
+        private static void ProcessDependencyCache(string appId)
+        {
+            // todo :)
+        }
+
+        private async Task AddSharedFilesystemReference(TargetHello targetHello, List<AssemblyReference> existingReferences)
+        {
+            Logger.LogInformation("Target and host share filesystem, attempting to preload dependencies");
+
+            var files = FileSystem.Directory.GetFiles(targetHello.RootAssemblyPath, "*.dll");
+            foreach (var f in files)
+            {
+                var reference = new AssemblyReference
+                {
+                    AssemblyLocation = f,
+                    ModificationTime = FileSystem.FileInfo.FromFileName(f).LastWriteTime,
+                    PeBytes = await FileSystem.File.ReadAllBytesAsync(f)
+                };
+
+                IncrementalCompiler.AddMetadataReference(reference);
+                existingReferences.Add(reference);
+            }
+        }
     }
 
     public class PersistedContext

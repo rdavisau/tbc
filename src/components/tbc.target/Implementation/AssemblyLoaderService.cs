@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -8,6 +9,7 @@ using Nito.AsyncEx;
 using Tbc.Core.Apis;
 using Tbc.Core.Models;
 using Tbc.Core.Socket.Abstractions;
+using Tbc.Target.Config;
 using Tbc.Target.Interfaces;
 using Tbc.Target.Requests;
 using AssemblyReference = Tbc.Core.Models.AssemblyReference;
@@ -20,16 +22,37 @@ namespace Tbc.Target.Implementation;
 
 public class AssemblyLoaderService : ITbcTarget, ISendToRemote
 {
+    private readonly TargetConfiguration _configuration;
     private IReloadManager _reloadManager;
     private readonly Action<string> _log;
     public IRemoteEndpoint? Remote { get; set; }
 
-    public AssemblyLoaderService(IReloadManager reloadManager, Action<string> log)
+    private bool _useSharedFileSystemAssemblyReferences;
+
+    public AssemblyLoaderService(TargetConfiguration targetConfiguration, IReloadManager reloadManager,
+        Action<string> log)
     {
+        _configuration = targetConfiguration;
         _reloadManager = reloadManager;
         _log = log;
 
         OnReloadManager(reloadManager);
+    }
+
+    public Task<TargetHello> Hello(HostHello hello)
+    {
+        var canAccessHostFilesystem = hello.SharedHostFilePath is { } tmpPath && File.Exists(tmpPath);
+
+        _useSharedFileSystemAssemblyReferences = canAccessHostFilesystem && _configuration.UseDependencyCache;
+
+        return Task.FromResult(new TargetHello
+        {
+            CanAccessSharedHostFile = canAccessHostFilesystem,
+            RootAssemblyPath = Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!,
+            ApplicationIdentifier = _configuration.ApplicationIdentifier,
+            UseDependencyCache = _configuration.UseDependencyCache,
+            UseSharedFilesystemDependencyResolution = canAccessHostFilesystem && _configuration.UseSharedFilesystemDependencyResolutionIfPossible
+        });
     }
 
     public async Task<Outcome> LoadAssembly(LoadDynamicAssemblyRequest request)
@@ -85,6 +108,9 @@ public class AssemblyLoaderService : ITbcTarget, ISendToRemote
 
     public async Task<Outcome> SynchronizeDependencies(CachedAssemblyState cachedAssemblyState)
     {
+        _cachedAssemblyState = cachedAssemblyState.CachedAssemblies.GroupBy(x => x.AssemblyLocation)
+           .ToDictionary(x => x.Key, x => x.ToList());
+
         Task.Delay(TimeSpan.FromSeconds(.5))
            .ContinueWith(async _ =>
             {
@@ -111,7 +137,7 @@ public class AssemblyLoaderService : ITbcTarget, ISendToRemote
         });
 
     private readonly AsyncLock _mutex = new();
-
+    private Dictionary<string, List<CachedAssembly>> _cachedAssemblyState = new();
     private async Task WriteIfNecessary(Assembly asm)
     {
         using (await _mutex.LockAsync())
@@ -126,6 +152,9 @@ public class AssemblyLoaderService : ITbcTarget, ISendToRemote
             if (asm.FullName.StartsWith("r2,"))
                 return;
 
+            if (_cachedAssemblyState.ContainsKey(asm.Location))
+                return;
+
             try
             {
                 var @ref = new AssemblyReference
@@ -133,7 +162,7 @@ public class AssemblyLoaderService : ITbcTarget, ISendToRemote
                     AssemblyName = asm.FullName,
                     AssemblyLocation = asm.Location,
                     ModificationTime = new DateTimeOffset(new FileInfo(asm.Location).LastWriteTimeUtc, TimeSpan.Zero),
-                    PeBytes = File.ReadAllBytes(asm.Location)
+                    PeBytes = _useSharedFileSystemAssemblyReferences ? null : File.ReadAllBytes(asm.Location)
                 };
 
                 _log($"Will send {asm.FullName} - {sw.Elapsed}");
@@ -141,6 +170,7 @@ public class AssemblyLoaderService : ITbcTarget, ISendToRemote
                 await Remote.SendRequest<AssemblyReference, Outcome>(@ref);
 
                 _log($"Sent {asm.FullName} - {sw.Elapsed}");
+                _cachedAssemblyState[asm.Location] = new List<CachedAssembly> { new(@ref) };
             }
             catch (Exception ex)
             {

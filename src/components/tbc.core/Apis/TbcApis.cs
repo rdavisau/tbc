@@ -6,6 +6,8 @@ namespace Tbc.Core.Apis;
 
 public interface ITbcTarget
 {
+    [Post("/hello")]
+    Task<TargetHello> Hello(HostHello hello);
 
     [Post("/load-assembly")]
     Task<Outcome> LoadAssembly(LoadDynamicAssemblyRequest request);

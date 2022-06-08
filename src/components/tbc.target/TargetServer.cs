@@ -29,7 +29,7 @@ namespace Tbc.Target
             log ??= Console.WriteLine;
 
             var listener = new TcpListener(IPAddress.Any, Configuration.ListenPort);
-            var handler = new AssemblyLoaderService(reloadManager, log);
+            var handler = new AssemblyLoaderService(Configuration, reloadManager, log);
 
             listener.Start();
 

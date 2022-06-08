@@ -100,6 +100,7 @@ public class AmbiguousInvocationFixer : ComponentBase<AmbiguousInvocationFixer>,
                        .GetRoot()
                        .DescendantNodes()
                        .OfType<InvocationExpressionSyntax>()
+                       .Where(x => x.Expression is MemberAccessExpressionSyntax)
                        .Where(x => (((MemberAccessExpressionSyntax)x.Expression).Name).Identifier.Text ==
                                    mds.Identifier.Text)
                        .ToList();
@@ -122,6 +123,7 @@ public class AmbiguousInvocationFixer : ComponentBase<AmbiguousInvocationFixer>,
                        .GetRoot()
                        .DescendantNodes()
                        .OfType<InvocationExpressionSyntax>()
+                       .Where(x => x.Expression is MemberAccessExpressionSyntax)
                        .Any(x => ((MemberAccessExpressionSyntax)x.Expression).Name.Identifier.Text ==
                                  mds.Identifier.Text);
             }

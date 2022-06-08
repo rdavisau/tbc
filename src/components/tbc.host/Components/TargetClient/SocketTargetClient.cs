@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Net.Sockets;
 using System.Reactive.Linq;
@@ -18,12 +20,15 @@ namespace Tbc.Host.Components.TargetClient;
 
 public class SocketTargetClient : ComponentBase<SocketTargetClient>, ITargetClient, ITbcHost
 {
+    private readonly IFileSystem _fileSystem;
+
     public TcpClient TcpClient { get; private set; }
     public SocketServer<ITbcProtocol> Target { get; set; }
 
-    public SocketTargetClient(ILogger<SocketTargetClient> logger, IRemoteClientDefinition clientDefinition) : base(logger)
+    public SocketTargetClient(ILogger<SocketTargetClient> logger, IRemoteClientDefinition clientDefinition, IFileSystem fileSystem) : base(logger)
     {
         ClientDefinition = clientDefinition;
+        _fileSystem = fileSystem;
     }
 
     public IRemoteClientDefinition ClientDefinition { get; }
@@ -56,6 +61,7 @@ public class SocketTargetClient : ComponentBase<SocketTargetClient>, ITargetClie
                         _clientChannelState.OnNext(CanonicalChannelState.Shutdown);
                         return Task.CompletedTask;
                     });
+
                 await Target.Run();
 
                 Logger.LogInformation("TcpClient connected: {@State}", TcpClient.Connected);
@@ -76,9 +82,15 @@ public class SocketTargetClient : ComponentBase<SocketTargetClient>, ITargetClie
         }
     }
 
-    public async Task<IAsyncEnumerable<AssemblyReference>> AssemblyReferences()
+    public Task<TargetHello> Hello(HostHello hello) =>
+        Target.SendRequest<HostHello, TargetHello>(hello);
+
+    public async Task<IAsyncEnumerable<AssemblyReference>> AssemblyReferences(List<AssemblyReference> assemblyReferences)
     {
-        Task.Delay(TimeSpan.FromSeconds(.1)).ContinueWith(_ => Target.SendRequest<CachedAssemblyState, Outcome>(new CachedAssemblyState()));
+        var cachedAssemblies = assemblyReferences.Select(x => new CachedAssembly(x)).ToList();
+
+        Task.Delay(TimeSpan.FromSeconds(.1))
+           .ContinueWith(_ => Target.SendRequest<CachedAssemblyState, Outcome>(new CachedAssemblyState { CachedAssemblies = cachedAssemblies }));
 
         return _incomingAssemblyReferences.ToAsyncEnumerable();
     }

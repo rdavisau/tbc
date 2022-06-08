@@ -160,9 +160,20 @@ public record CachedAssemblyState
 [MessagePackObject]
 public record CachedAssembly
 {
+    public CachedAssembly() {}
+
+    public CachedAssembly(AssemblyReference assemblyReference)
+    {
+        AssemblyName = assemblyReference.AssemblyName;
+        AssemblyLocation = assemblyReference.AssemblyLocation;
+        ModificationTime = assemblyReference.ModificationTime;
+    }
+
     [Key(0)]
-    public string AssemblyName { get; set; } = default!;
+    public string? AssemblyName { get; set; } = default!;
     [Key(1)]
+    public string AssemblyLocation { get; set; } = default!;
+    [Key(2)]
     public DateTimeOffset ModificationTime { get; set; }
 }
 
@@ -176,11 +187,35 @@ public record AssemblyReference
     [Key(2)]
     public DateTimeOffset ModificationTime { get; set; } = default!;
     [Key(3)]
-    public byte[] PeBytes { get; set; } = default!;
+    public byte[]? PeBytes { get; set; } = default!;
 }
 
 [MessagePackObject]
 public record ManyAssemblyReferences
 {
     [Key(0)] public List<AssemblyReference> AssemblyReferences { get; set; } = new();
+}
+
+[MessagePackObject]
+public record HostHello
+{
+    [Key(0)]
+    public string SharedHostFilePath { get; set; } = default!;
+}
+
+[MessagePackObject]
+public record TargetHello
+{
+    [Key(0)] public string? ApplicationIdentifier { get; set; } = default!;
+
+    [Key(1)]
+    public bool CanAccessSharedHostFile { get; set; }
+
+    [Key(2)]
+    public bool UseSharedFilesystemDependencyResolution { get; set; }
+
+    [Key(3)] public string RootAssemblyPath { get; set; } = default!;
+
+    [Key(4)]
+    public bool UseDependencyCache { get; set; }
 }
