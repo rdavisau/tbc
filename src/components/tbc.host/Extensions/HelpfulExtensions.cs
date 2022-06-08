@@ -17,7 +17,10 @@ namespace Tbc.Host.Extensions
             Task.Run(async () =>
             {
                 while (true)
-                    await @do();
+                {
+                    try { await @do(); }
+                    catch (Exception ex) { Console.WriteLine(ex); }
+                }
             });
         
         public static JsonSerializerSettings NaiveCloneSerialiserSettings = new JsonSerializerSettings

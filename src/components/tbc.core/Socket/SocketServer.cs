@@ -73,7 +73,7 @@ public class SocketServer<TProtocol> : IRemoteEndpoint
            .ContinueWith(t =>
 #pragma warning restore CS4014
             {
-                _log("Request loop terminated:");
+                _log("Request loop terminated: ");
                 _log(t.Exception?.ToString() ?? "no exception");
                 _finished = true;
             });
@@ -87,19 +87,14 @@ public class SocketServer<TProtocol> : IRemoteEndpoint
             _log($"receive result: {receiveResult}");
 
             if (receiveResult.Outcome == ReceiveResultOutcome.Disconnect)
-                await Terminate();
+            {
+                if (_onDisconnect is { } od)
+                    await od.Invoke();
+
+                break;
+            }
         }
     }
-
-    private async Task Terminate()
-    {
-        if (_onDisconnect is { } od)
-            await od.Invoke();
-
-        throw new FinishedException();
-    }
-
-    public class FinishedException : Exception {}
 
     private async Task<ReceiveResult> ReceiveAndHandle(CancellationToken ct = default)
     {

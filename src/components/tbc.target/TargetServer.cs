@@ -29,7 +29,6 @@ namespace Tbc.Target
             log ??= Console.WriteLine;
 
             var listener = new TcpListener(IPAddress.Any, Configuration.ListenPort);
-            var handler = new AssemblyLoaderService(Configuration, reloadManager, log);
 
             listener.Start();
 
@@ -41,6 +40,7 @@ namespace Tbc.Target
 
                     try
                     {
+                        var handler = new AssemblyLoaderService(Configuration, reloadManager, log);
                         var socketServer = new SocketServer<ITbcProtocol>(connection, handler, "client", log);
                         await socketServer.Run();
                     }
