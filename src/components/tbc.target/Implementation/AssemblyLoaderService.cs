@@ -48,7 +48,7 @@ public class AssemblyLoaderService : ITbcTarget, ISendToRemote
         return Task.FromResult(new TargetHello
         {
             CanAccessSharedHostFile = canAccessHostFilesystem,
-            RootAssemblyPath = Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!,
+            RootAssemblyPath = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location ?? Assembly.GetExecutingAssembly()?.Location)!,
             ApplicationIdentifier = _configuration.ApplicationIdentifier,
             UseDependencyCache = _configuration.UseDependencyCache,
             UseSharedFilesystemDependencyResolution = canAccessHostFilesystem && _configuration.UseSharedFilesystemDependencyResolutionIfPossible
