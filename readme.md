@@ -103,6 +103,8 @@ The host supports a small set of commands that were useful to me:
 
 `reset`: resets the state of the incremental compiler - removes all trees and references, and asks the target to resend dependencies. 
 
+`watch {path}`: relative to the last changed file's directory, recursively finds all .cs in at `path` and below and adds them to the incremental compilation. e.g. `watch .` to include all files in the same directory as the current file being changed, without having to trigger changes against them all individually
+
 ### target commands
 
 Commands prefixed with '!' will be sent to targets rather than the host. There are no built-in commands supported by the target, but you can add support for arbitrary commands to your `IReloadManager` by implementing the `ExecuteCommand` method. For example, a `goto` command in a prism app could be implemented using the code below, which walks the service container for pages and allows them to be chosen from a menu (if not specified as an argument to the command):
