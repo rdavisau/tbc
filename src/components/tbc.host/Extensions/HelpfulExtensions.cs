@@ -61,7 +61,13 @@ namespace Tbc.Host.Extensions
 
         public static void LogInformationAsync(this ILogger logger, string message, params object[] args)
             => Task.Run(() => logger.LogInformation(message, args));
-        
+
+        public static void LogErrorAsync(this ILogger logger, string message, params object[] args)
+            => Task.Run(() => logger.LogError(message, args));
+
+        public static void LogAsync(this ILogger logger, LogLevel level, string message, params object[] args)
+            => Task.Run(() => logger.Log(level, message, args));
+
         public static HashSet<T> ToHashSet<T, U>(this IEnumerable<U> items, Func<U, T> selector)
             => new HashSet<T>(items.Select(selector));
 

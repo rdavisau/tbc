@@ -68,7 +68,7 @@ namespace Tbc.Host.Components.FileEnvironment
                 .Select(IncrementalCompiler.StageFile)
                 .Where(x => x != null)
                 .SelectMany(SendAssemblyForReload)
-                .Subscribe(x => Logger.LogInformation("Send incremental assembly outcome: {@Outcome}", x));
+                .Subscribe(x => Logger.Log(x.Success ? LogLevel.Information : LogLevel.Error, "Send incremental assembly outcome: {@Outcome}", x));
             
             Logger.LogInformation("FileEnvironment for client {@Client} initialised", Client);
             
@@ -269,7 +269,9 @@ namespace Tbc.Host.Components.FileEnvironment
 
                     var outcome = await Client.RequestClientExecAsync(req);
                     
-                    Logger.LogInformation("{@Outcome}", outcome);
+                    Logger.LogInformation("Command {Command} success: {@Outcome}", cmd, outcome.Success);
+                    foreach (var message in outcome.Messages)
+                        Logger.LogInformation("{Message}", message.Message);
                 }
             },
             

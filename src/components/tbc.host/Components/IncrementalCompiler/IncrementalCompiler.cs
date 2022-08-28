@@ -87,13 +87,13 @@ namespace Tbc.Host.Components.IncrementalCompiler
                 (SourceGeneratorResolution.SelectMany(x => x.Value.SourceGenerators).DistinctBySelector(x => x.GetType()).ToList(),
                  SourceGeneratorResolution.SelectMany(x => x.Value.IncrementalGenerators).DistinctBySelector(x => x.GetType()).ToList());
             
-            Logger.LogInformation("Source Generator Resolution: {Count} generator(s)", SourceGeneratorResolution);
+            Logger.LogInformation("Source Generator Resolution: {Count} generator(s)", SourceGeneratorResolution.Count);
             foreach (var resolutionOutcome in SourceGeneratorResolution)
-                Logger.LogDebug(
+                Logger.LogInformation(
                     "Reference {@Reference}, Diagnostics: {@Diagnostics}, " +
-                    "Source Generators: {@SourceGenerators}, Incremental Generators: {@IncrementalGenerators}", 
-                    resolutionOutcome.Key, resolutionOutcome.Value.Diagnostics, resolutionOutcome.Value.SourceGenerators, resolutionOutcome.Value.IncrementalGenerators);
-            
+                    "Source Generators ({SourceGeneratorsCount}): {@SourceGenerators}, Incremental Generators ({IncrementalSourceGeneratorsCount}): {@IncrementalGenerators}",
+                    resolutionOutcome.Key, resolutionOutcome.Value.Diagnostics, resolutionOutcome.Value.SourceGenerators.Count, resolutionOutcome.Value.SourceGenerators, resolutionOutcome.Value.IncrementalGenerators.Count, resolutionOutcome.Value.IncrementalGenerators);
+
             CurrentCompilation =
                 CSharpCompilation.Create("r2", options: cscOptions);
             
@@ -110,6 +110,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
                            .WithPreprocessorSymbols(_options.PreprocessorSymbols.ToArray()),
                         path: "",
                         Encoding.Default));
+
         }
 
         private ImmutableDictionary<SourceGeneratorReference, ResolveSourceGeneratorsResponse> ResolveSourceGenerators()
@@ -185,7 +186,8 @@ namespace Tbc.Host.Components.IncrementalCompiler
 
                 var elapsed = sw.ElapsedMilliseconds;
 
-                Logger.LogInformationAsync(
+                Logger.LogAsync(
+                    result.Success ? LogLevel.Information : LogLevel.Error,
                     "Stage '{FileName}' and emit - Success: {Success}, Duration: {Duration:N0}ms, Types: [ {Types} ], Diagnostics: {@Diagnostics}", 
                     Path.GetFileName(file.Path), result.Success, elapsed, syntaxTree.GetContainedTypes(),
                     result.Success 
@@ -194,7 +196,8 @@ namespace Tbc.Host.Components.IncrementalCompiler
                             Environment.NewLine,
                             result.Diagnostics
                                 .Where(x => x.Severity == DiagnosticSeverity.Error)
-                                .Select(x => $"{x.Location}: {x.GetMessage()}")));
+                                .Select(x => (Location: x.Location as SourceLocation, Message: x.GetMessage()))
+                                .Select(x => GetDescriptionForDiagnostic(x.Location, x.Message))));
 
                 return newCompilation;
             });
@@ -424,6 +427,19 @@ namespace Tbc.Host.Components.IncrementalCompiler
             Logger.LogInformation("Resolved primary type result: {ResolvedPrimaryType} for hint {Hint}. Candidates: {@Candidates}", preferred, typeHint, candidates);
 
             return preferred;
+        }
+
+        private string GetDescriptionForDiagnostic(SourceLocation Location, string Message)
+        {
+            try
+            {
+                return $"{_fileSystem.Path.GetFileName(Location.SourceTree.FilePath)} " +
+                       $"[{Location.GetLineSpan().StartLinePosition}]: {Message}";
+            }
+            catch (Exception ex)
+            {
+                return Message;
+            }
         }
 
         public void Dispose()
