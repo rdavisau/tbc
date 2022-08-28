@@ -139,7 +139,7 @@
       <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.7.0" />
       <PackageReference Include="System.Text.Encoding.CodePages" Version="4.5.1" />
       <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.3" />
-      <PackageReference Include="tbc.target" Version="0.0.20220413.3" />
+      <PackageReference Include="tbc.target" Version="0.0.20220810.1" />
       <PackageReference Include="Xamarin.Forms" Version="5.0.0.2012" />
     </ItemGroup>
     <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />

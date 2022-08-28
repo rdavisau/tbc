@@ -109,11 +109,11 @@ Commands prefixed with '!' will be sent to targets rather than the host. There a
 
 ![](https://i.imgur.com/eIa1QU6.png)
 
-([this command exists in the prism sample](https://github.com/rdavisau/tbc/blob/main/src/samples/prism/tbc.sample.prism/tbc.sample.prism/tbc.sample.prism/ReloadManager.cs#L97-L142))
+([this command exists in the prism sample](https://github.com/rdavisau/tbc/blob/main/src/samples/prism/tbc.sample.prism/tbc.sample.prism/ReloadManager.cs#L97-L142))
 
 You could implement other useful debug commands for your application, like login/logout, cache clearing etc. 
 
-Since your `IReloadManager` is itself reloadable (provided it derives from `ReloadManagerBase`), you can add support for new commands while the application is still running. See [here](https://github.com/rdavisau/tbc/blob/main/src/samples/prism/tbc.sample.prism/tbc.sample.prism/tbc.sample.prism/ReloadManager.cs#L37-L47) in the prism sample for how you can make the reloader reloadable.
+Since your `IReloadManager` is itself reloadable (provided it derives from `ReloadManagerBase`), you can add support for new commands while the application is still running. See [here](https://github.com/rdavisau/tbc/blob/main/src/samples/prism/tbc.sample.prism/tbc.sample.prism/ReloadManager.cs#L37-L47) in the prism sample for how you can make the reloader reloadable.
 
 ## debugging
 
