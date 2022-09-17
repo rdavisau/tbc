@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ImTools;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Tbc.Host.Components.Abstractions;
@@ -11,7 +12,7 @@ namespace Tbc.Host.Components.CommandProcessor
 {
     public class CommandProcessor : ComponentBase<CommandProcessor>, ICommandProcessor
     {
-        public List<TbcComponentCommand> Commands { get; set; }
+        public Dictionary<string, List<TbcComponentCommand>> Commands { get; set; } = new();
 
         public CommandProcessor(ILogger<CommandProcessor> logger) : base(logger)
         {
@@ -22,12 +23,15 @@ namespace Tbc.Host.Components.CommandProcessor
         
         public void RegisterManyCommands(params object[] context)
         {
+            var key = context is { Length: 1 } && context[0] is IExposeCommands {} iec
+                ? iec.Identifier : Guid.NewGuid().ToString();
+
             var commands = new List<TbcComponentCommand>();
             
             foreach (var obj in context)
                 commands.AddRange(Descend(obj));
 
-            Commands = commands;
+            Commands[key] = commands;
         }
 
         public void PrintCommands()
@@ -35,6 +39,7 @@ namespace Tbc.Host.Components.CommandProcessor
             Logger.LogInformation(
                 JsonConvert.SerializeObject(
                     Commands
+                        .SelectMany(x => x.Value)
                         .GroupBy(x => x.ComponentIdentifier, x => x.Command)
                         .Select(x => new { Component = x.Key, Commands = x.ToList() })
                     , Formatting.Indented));
@@ -58,8 +63,9 @@ namespace Tbc.Host.Components.CommandProcessor
             var handlers =
                 
                 isCommandForTarget 
-                    ? Commands.Where(x => x.Command.Command == "run-on-target").ToList()
+                    ? Commands.SelectMany(x => x.Value).Where(x => x.Command.Command == "run-on-target").ToList()
                     : Commands
+                        .SelectMany(x => x.Value)
                         .Where(x => String.Equals(x.Command.Command, cmd, StringComparison.InvariantCultureIgnoreCase))
                         .ToList();
 
@@ -69,8 +75,11 @@ namespace Tbc.Host.Components.CommandProcessor
                 return null;
             }
 
-            foreach (var handler in handlers) 
-                await handler.Command.Execute(cmd, args);
+            foreach (var handler in handlers)
+            {
+                try { await handler.Command.Execute(cmd, args); }
+                catch (Exception ex) { Logger.LogError(ex, "When executing command via handler {@Handler}", handler); }
+            }
 
             return "cool";
         }
