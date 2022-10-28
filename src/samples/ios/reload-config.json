@@ -1,0 +1,31 @@
+{
+  "ConsoleHost": {
+    "ExpectedClients": [
+      {
+        "Address": "localhost",
+        "Port": 50125
+      }
+    ]
+  },
+  "FileWatcher": {
+    "RootPath": "tbc.sample.ios",
+    "Ignore": [
+      "/obj/",
+      "/bin/"
+    ]
+  },
+  "AssemblyCompiler": {
+    "Debug": true,
+    "PreprocessorSymbols": [
+      "DEBUG",
+      "__RELOAD__"
+    ],
+    "GlobalUsingsSources": [
+      {
+        "Kind": "SearchPath",
+        "Reference": "tbc.sample.ios/tbc.sample.ios/obj/Debug/net6.0-ios",
+        "Context": "LastModified"
+      }
+    ]
+  }
+}
