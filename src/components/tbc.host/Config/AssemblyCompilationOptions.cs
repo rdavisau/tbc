@@ -17,5 +17,6 @@ namespace Tbc.Host.Config
         public List<SourceGeneratorReference> SourceGeneratorReferences { get; set; } = new();
         public List<GlobalUsingsSource> GlobalUsingsSources { get; set; } = new();
         public AssemblyFixerOptions FixerOptions { get; set; } = new() { Enabled = true };
+        public iOSDynamicRegistrationOptions iOSDynamicRegistrationOptions { get; set; } = new();
     }
 }
