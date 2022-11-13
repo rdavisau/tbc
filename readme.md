@@ -190,6 +190,15 @@ Compilation fixers can make a transient update to the compilation bundle in orde
 ```
 to the  `AssemblyCompiler` configuration element.
 
+## automatic register attribute de-clashifying (ios)
+
+Reloading types that derive from `NSObject` will result in errors when the runtime attempts to register new versions of types with previously registered native keys. tbc can automatically add unique register attributes to all 
+`NSObject`-derived types, in order to prevent clashes. To enable this, add
+```
+ "iOSDynamicRegistrationOptions": { "Enabled": true }
+```
+to the `AssemblyCompiler` configuration element. If you're not reloading `NSObject`-based types, leave it off.
+
 # alpha quality
 
 I've only used this for myself but on several production-complexity-level apps. I've only used it heavily on iOS. At least the sample works on Android too.
