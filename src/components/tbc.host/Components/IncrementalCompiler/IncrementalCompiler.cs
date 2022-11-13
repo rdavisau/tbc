@@ -12,6 +12,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.Extensions.Logging;
+using Roslyn.Reflection;
 using Tbc.Core.Models;
 using Tbc.Host.Components.Abstractions;
 using Tbc.Host.Components.CommandProcessor.Models;
@@ -122,10 +123,6 @@ namespace Tbc.Host.Components.IncrementalCompiler
         {
             var sw = Stopwatch.StartNew();
 
-            file.Contents = file.Contents.Replace(
-                "_MYGUID_MYGUID_MYGUID_MYGUID_MYGUID_",
-                Guid.NewGuid().ToString().Replace("-", "_"));
-                            
             var syntaxTree = 
                 CSharpSyntaxTree.ParseText(
                     file.Contents,
@@ -174,7 +171,25 @@ namespace Tbc.Host.Components.IncrementalCompiler
                 }
 
                 var compilation = (CSharpCompilation)(sourceGeneratedCompilation ?? newCompilation);
-                var result = EmitAssembly(sourceGeneratedCompilation ?? newCompilation, out emittedAssembly);
+
+                if (_options.iOSDynamicRegistrationOptions.Enabled)
+                {
+                    var dynamicRegistrationCompilation = compilation;
+                    foreach (var tree in compilation.SyntaxTrees)
+                    {
+                        var rewriter = new iOSDynamicRegistrationAttributeRewriter(
+                            new MetadataLoadContext(dynamicRegistrationCompilation),
+                            dynamicRegistrationCompilation.GetSemanticModel(tree, ignoreAccessibility: true)
+                        );
+
+                        dynamicRegistrationCompilation = dynamicRegistrationCompilation
+                           .ReplaceSyntaxTree(tree, SyntaxFactory.SyntaxTree(rewriter.Visit(tree.GetRoot()), tree.Options, tree.FilePath, tree.Encoding));
+                    }
+
+                    compilation = dynamicRegistrationCompilation;
+                }
+
+                var result = EmitAssembly(compilation, out emittedAssembly);
 
                 if (!result.Success 
                     && _options.FixerOptions.Enabled 
