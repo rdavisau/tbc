@@ -23,9 +23,12 @@
     "GlobalUsingsSources": [
       {
         "Kind": "SearchPath",
-        "Reference": "tbc.sample.ios/tbc.sample.ios/obj/Debug/net6.0-ios",
+        "Reference": "tbc.sample.ios/tbc.sample.ios/obj/Debug/net7.0-ios",
         "Context": "LastModified"
       }
-    ]
+    ],
+    "iOSDynamicRegistrationOptions": {
+      "Enabled": true
+    }
   }
 }
