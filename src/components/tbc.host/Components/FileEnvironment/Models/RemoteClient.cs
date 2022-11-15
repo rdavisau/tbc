@@ -1,9 +1,9 @@
 namespace Tbc.Host.Components.FileEnvironment.Models
 {
-    public class RemoteClient : IRemoteClientDefinition
+    public record RemoteClient : IRemoteClientDefinition
     {
-        public string Address { get; set; }
-        public int Port { get; set; }
+        public required string Address { get; init; }
+        public required int Port { get; set; }
 
         public override string ToString()
             => $"{Address}:{Port}";

@@ -83,7 +83,7 @@ public class HttpServer<THandler>
         using var sr = new StreamReader(inputStream);
         var json = await sr.ReadToEndAsync();
         var content = JsonSerializer.Deserialize(json, type, new JsonSerializerOptions(JsonSerializerDefaults.Web));
-        var ret = await action(content);
+        var ret = await action(content!);
 
         return ret;
     }
@@ -110,7 +110,7 @@ public class HttpServer<THandler>
 
     private void SetHandlerOperations(THandler handler)
     {
-        _handlerOperations = typeof(THandler).GetMethods().Concat(handler.GetType().GetMethods())
+        _handlerOperations = typeof(THandler).GetMethods().Concat(handler!.GetType().GetMethods())
            .Select(x => (x.GetCustomAttribute<PostAttribute>(), x))
            .Where(x => x.Item1 != null)
            .ToDictionary(x => x.Item1.Path, x => (x.x.GetParameters()[0].ParameterType,

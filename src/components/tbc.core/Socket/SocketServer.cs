@@ -56,7 +56,8 @@ public class SocketServer<TProtocol> : IRemoteEndpoint
         {
             SocketSerializationFormat.Json => new ClearTextSystemTextJsonSocketSerializer(),
             SocketSerializationFormat.CompressedJson => new SystemTextJsonSocketSerializer(),
-            SocketSerializationFormat.MessagePack => new MessagePackSocketSerializer()
+            SocketSerializationFormat.MessagePack => new MessagePackSocketSerializer(),
+            _ => throw new ArgumentOutOfRangeException()
         };
 
         if (Handler is ISendToRemote str)
@@ -66,7 +67,7 @@ public class SocketServer<TProtocol> : IRemoteEndpoint
         SetHandlerOperations();
     }
 
-    public async Task Run(CancellationToken ct = default)
+    public Task Run(CancellationToken ct = default)
     {
 #pragma warning disable CS4014
         Task.Run(async () => await RunRequestLoop(ct))
@@ -77,6 +78,8 @@ public class SocketServer<TProtocol> : IRemoteEndpoint
                 _log(t.Exception?.ToString() ?? "no exception");
                 _finished = true;
             });
+
+        return Task.CompletedTask;
     }
 
     private async Task RunRequestLoop(CancellationToken ct = default)
@@ -251,7 +254,8 @@ public class SocketServer<TProtocol> : IRemoteEndpoint
             socketMessageKind switch
             {
                 SocketMessageKind.Request => typeof(SocketRequest<>).MakeGenericType(incomingType),
-                SocketMessageKind.Response => typeof(SocketResponse<>).MakeGenericType(incomingType)
+                SocketMessageKind.Response => typeof(SocketResponse<>).MakeGenericType(incomingType),
+                _ => throw new ArgumentOutOfRangeException()
             };
 
         var message = (ISocketMessage)

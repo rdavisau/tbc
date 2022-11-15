@@ -6,7 +6,7 @@ namespace Tbc.Host.Components.CommandProcessor
     {
         void RegisterCommands(object context);
         void RegisterManyCommands(params object[] context);
-        Task<object> HandleCommand(string command);
+        Task<object?> HandleCommand(string command);
         void PrintCommands();
     }
 }

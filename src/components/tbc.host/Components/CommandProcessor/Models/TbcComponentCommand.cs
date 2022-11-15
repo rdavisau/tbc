@@ -2,7 +2,7 @@
 {
     public class TbcComponentCommand
     {
-        public string ComponentIdentifier { get; set; }
-        public TbcCommand Command { get; set; }
+        public required string ComponentIdentifier { get; init; }
+        public required TbcCommand Command { get; init; }
     }
 }

@@ -13,7 +13,7 @@ namespace Tbc.Host.Config
         public bool DisambiguateClassNames { get; set; }
         public List<string> PreprocessorSymbols { get; set; } 
             = new List<string>();
-        public string WriteAssembliesPath { get; set; }
+        public string? WriteAssembliesPath { get; set; }
         public List<SourceGeneratorReference> SourceGeneratorReferences { get; set; } = new();
         public List<GlobalUsingsSource> GlobalUsingsSources { get; set; } = new();
         public AssemblyFixerOptions FixerOptions { get; set; } = new() { Enabled = true };

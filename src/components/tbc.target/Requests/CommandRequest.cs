@@ -4,11 +4,6 @@ namespace Tbc.Target.Requests
 {
     public class CommandRequest
     {
-        public CommandRequest()
-        {
-            
-        }
-        
         public CommandRequest(string command, List<string> args)
         {
             Command = command;
@@ -16,8 +11,6 @@ namespace Tbc.Target.Requests
         }
         
         public string Command { get; set; }
-
         public List<string> Args { get; set; }
-            = new List<string>();
     }
 }

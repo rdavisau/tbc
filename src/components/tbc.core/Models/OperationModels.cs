@@ -38,10 +38,10 @@ public record SocketRequest<T> : ISocketMessage
     public string RequestIdentifier { get; set; } = default!;
 
     [Key(1)]
-    public T Payload { get; set; } = default!;
+    public T Payload { get; init; } = default!;
 
     SocketMessageKind ISocketMessage.Kind => SocketMessageKind.Request;
-    object ISocketMessage.Payload => Payload;
+    object ISocketMessage.Payload => Payload!;
 }
 
 [MessagePackObject]
@@ -60,7 +60,7 @@ public record SocketResponse<T> : ISocketMessage
     public string? ErrorData { get; set; }
 
     SocketMessageKind ISocketMessage.Kind => SocketMessageKind.Response;
-    object ISocketMessage.Payload => Data;
+    object ISocketMessage.Payload => Data!;
 
     public SocketResponse() { }
 
@@ -120,7 +120,7 @@ public record LoadDynamicAssemblyRequest
     public string AssemblyName { get; set; } = default!;
 
     [Key(3)]
-    public string PrimaryTypeName { get; set; } = default!;
+    public string? PrimaryTypeName { get; set; } = default!;
 }
 
 [MessagePackObject]
