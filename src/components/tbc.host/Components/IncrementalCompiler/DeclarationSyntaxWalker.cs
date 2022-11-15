@@ -10,8 +10,8 @@ namespace Tbc.Host.Components.IncrementalCompiler
 
         public override void Visit(SyntaxNode node)
         {
-            if (node is T)
-                Members.Add(node as T);
+            if (node is T syntaxNode)
+                Members.Add(syntaxNode);
             else
                 base.Visit(node);
         }

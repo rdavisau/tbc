@@ -22,13 +22,14 @@ public class SocketTargetClient : ComponentBase<SocketTargetClient>, ITargetClie
 {
     private readonly IFileSystem _fileSystem;
 
-    public TcpClient TcpClient { get; private set; }
-    public SocketServer<ITbcProtocol> Target { get; set; }
+    protected TcpClient? TcpClient { get; private set; }
+    protected SocketServer<ITbcProtocol>? Target { get; private set; }
 
     public SocketTargetClient(ILogger<SocketTargetClient> logger, IRemoteClientDefinition clientDefinition, IFileSystem fileSystem) : base(logger)
     {
-        ClientDefinition = clientDefinition;
         _fileSystem = fileSystem;
+
+        ClientDefinition = clientDefinition;
     }
 
     public IRemoteClientDefinition ClientDefinition { get; }
@@ -72,6 +73,7 @@ public class SocketTargetClient : ComponentBase<SocketTargetClient>, ITargetClie
             }
             catch (Exception ex)
             {
+                Logger.LogError(ex, "TcpClient loop instance errored");
                 _clientChannelState.OnNext(CanonicalChannelState.TransientFailure);
 
                 success = false;
@@ -83,28 +85,28 @@ public class SocketTargetClient : ComponentBase<SocketTargetClient>, ITargetClie
     }
 
     public Task<TargetHello> Hello(HostHello hello) =>
-        Target.SendRequest<HostHello, TargetHello>(hello);
+        Target!.SendRequest<HostHello, TargetHello>(hello);
 
-    public async Task<IAsyncEnumerable<AssemblyReference>> AssemblyReferences(List<AssemblyReference> assemblyReferences)
+    public Task<IAsyncEnumerable<AssemblyReference>> AssemblyReferences(List<AssemblyReference> assemblyReferences)
     {
         var cachedAssemblies = assemblyReferences.Select(x => new CachedAssembly(x)).ToList();
 
         Task.Delay(TimeSpan.FromSeconds(.1))
-           .ContinueWith(_ => Target.SendRequest<CachedAssemblyState, Outcome>(new CachedAssemblyState { CachedAssemblies = cachedAssemblies }));
+           .ContinueWith(_ => Target!.SendRequest<CachedAssemblyState, Outcome>(new CachedAssemblyState { CachedAssemblies = cachedAssemblies }));
 
-        return _incomingAssemblyReferences.ToAsyncEnumerable();
+        return Task.FromResult(_incomingAssemblyReferences.ToAsyncEnumerable());
     }
 
-    public async Task<IAsyncEnumerable<ExecuteCommandRequest>> CommandRequests()
-        => _incomingCommandRequests.ToAsyncEnumerable();
+    public Task<IAsyncEnumerable<ExecuteCommandRequest>> CommandRequests()
+        => Task.FromResult(_incomingCommandRequests.ToAsyncEnumerable());
 
     public Task<Outcome> RequestClientExecAsync(ExecuteCommandRequest req)
-        => Target.SendRequest<ExecuteCommandRequest, Outcome>(req);
+        => Target!.SendRequest<ExecuteCommandRequest, Outcome>(req);
 
     public async Task<Outcome> RequestClientLoadAssemblyAsync(LoadDynamicAssemblyRequest req)
     {
         var sw = Stopwatch.StartNew();
-        var result = await Target.SendRequest<LoadDynamicAssemblyRequest, Outcome>(req);
+        var result = await Target!.SendRequest<LoadDynamicAssemblyRequest, Outcome>(req);
         Logger.LogInformation("Round trip for LoadAssembly with primary type {PrimaryTypeName}, {Duration}ms", req.PrimaryTypeName, sw.ElapsedMilliseconds);
         return result;
     }
@@ -117,14 +119,14 @@ public class SocketTargetClient : ComponentBase<SocketTargetClient>, ITargetClie
              || x == CanonicalChannelState.Idle)
            .ToTask();
 
-    public async Task<Outcome> AddAssemblyReference(AssemblyReference reference)
+    public Task<Outcome> AddAssemblyReference(AssemblyReference reference)
     {
         _incomingAssemblyReferences.OnNext(reference);
 
-        return new Outcome { Success = true };
+        return Task.FromResult(new Outcome { Success = true });
     }
 
-    public async Task<Outcome> AddManyAssemblyReferences(ManyAssemblyReferences references)
+    public Task<Outcome> AddManyAssemblyReferences(ManyAssemblyReferences references)
     {
         var sw = Stopwatch.StartNew();
         Logger.LogInformation("Begin loading {AssemblyCount} references", references.AssemblyReferences.Count);
@@ -133,14 +135,15 @@ public class SocketTargetClient : ComponentBase<SocketTargetClient>, ITargetClie
             _incomingAssemblyReferences.OnNext(asm);
 
         Logger.LogInformation("{Elapsed:N0}ms to load {AssemblyCount} references", sw.ElapsedMilliseconds, references.AssemblyReferences.Count);
-        return new Outcome { Success = true };
+
+        return Task.FromResult(new Outcome { Success = true });
     }
 
-    public async Task<Outcome> ExecuteCommand(ExecuteCommandRequest request)
+    public Task<Outcome> ExecuteCommand(ExecuteCommandRequest request)
     {
         _incomingCommandRequests.OnNext(request);
 
-        return new Outcome { Success = true };
+        return Task.FromResult(new Outcome { Success = true });
     }
 
     public Task<Outcome> Heartbeat(HeartbeatRequest request)

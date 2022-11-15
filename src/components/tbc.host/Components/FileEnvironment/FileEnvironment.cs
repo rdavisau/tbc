@@ -23,8 +23,6 @@ namespace Tbc.Host.Components.FileEnvironment
 {
     public partial class FileEnvironment : TransientComponentBase<FileEnvironment>, IFileEnvironment, IExposeCommands, IHaveComponentsThatExposeCommands
     {
-        private bool _running;
-        
         public ITargetClient Client { get; }
         public ICommandProcessor CommandProcessor { get; }
         public IFileWatcher FileWatcher { get; }
@@ -42,10 +40,14 @@ namespace Tbc.Host.Components.FileEnvironment
             FileSystem = fileSystem;
             FileWatcher = fileWatcher;
             IncrementalCompiler = incrementalCompilerFactory($"{client.Address}:{client.Port}");
-            IncrementalCompiler.RootPath = FileWatcher.WatchPath;
+            IncrementalCompiler.SetRootPath(FileWatcher.WatchPath);
         }
 
-        private string _primaryTypeHint;
+        private bool _running;
+        public bool Terminated { get; set; }
+        private string? _primaryTypeHint;
+        private EmittedAssembly? _lastEmittedAssembly;
+        private string? _loadContext;
         
         public async Task Run()
         {
@@ -60,19 +62,21 @@ namespace Tbc.Host.Components.FileEnvironment
 
             await TryLoadLoadContext();
             
-            Task.Factory.StartNew(SetupReferenceTracking, TaskCreationOptions.LongRunning);
+            Task.Factory.StartNew(SetupReferenceTracking, TaskCreationOptions.LongRunning)
+               .FireAndForgetSafeAsync();
 
             FileWatcher
                 .Changes
                 .Where(_ => !Terminated)
                 .Select(IncrementalCompiler.StageFile)
                 .Where(x => x != null)
-                .SelectMany(SendAssemblyForReload)
+                .SelectMany(SendAssemblyForReload!)
                 .Subscribe(x => Logger.Log(x.Success ? LogLevel.Information : LogLevel.Error, "Send incremental assembly outcome: {@Outcome}", x));
             
             Logger.LogInformation("FileEnvironment for client {@Client} initialised", Client);
             
-            Task.Factory.StartNew(SetupCommandListening, TaskCreationOptions.LongRunning);
+            Task.Factory.StartNew(SetupCommandListening, TaskCreationOptions.LongRunning)
+               .FireAndForgetSafeAsync();
             
             await Client.WaitForTerminalState();
 
@@ -104,8 +108,8 @@ namespace Tbc.Host.Components.FileEnvironment
 
             await TryLoadLoadContext();
 
-            Task.Factory.StartNew(SetupReferenceTracking, TaskCreationOptions.LongRunning);
-            Task.Factory.StartNew(SetupCommandListening, TaskCreationOptions.LongRunning);
+            Task.Factory.StartNew(SetupReferenceTracking, TaskCreationOptions.LongRunning).FireAndForgetSafeAsync();
+            Task.Factory.StartNew(SetupCommandListening, TaskCreationOptions.LongRunning).FireAndForgetSafeAsync();
         }
 
         public async Task SetupReferenceTracking()
@@ -129,7 +133,8 @@ namespace Tbc.Host.Components.FileEnvironment
 
                 // allow a little time for references to come back <:-)
                 // should have client tell us when all current dependencies have been sent
-                Task.Delay(TimeSpan.FromSeconds(.33)).ContinueWith(_ => IncrementalCompiler.DoWarmup());
+                Task.Delay(TimeSpan.FromSeconds(.33)).ContinueWith(_ => IncrementalCompiler.DoWarmup())
+                   .FireAndForgetSafeAsync();
             }
 
             if (targetHello.UseDependencyCache && targetHello.ApplicationIdentifier is { } appIdentifier)
@@ -197,11 +202,6 @@ namespace Tbc.Host.Components.FileEnvironment
                     Logger.LogError(ex, nameof(SetupCommandListening));
             }
         }
-        
-        public bool Terminated { get; set; }
-
-        private EmittedAssembly _lastEmittedAssembly;
-        private string _loadContext;
 
         public async Task<Outcome> SendAssemblyForReload(EmittedAssembly asm)
         {
@@ -213,14 +213,14 @@ namespace Tbc.Host.Components.FileEnvironment
                 PdbBytes = asm.Pd,
                 PrimaryTypeName = 
                     String.IsNullOrWhiteSpace(_primaryTypeHint) 
-                    ? "" 
+                    ? null
                     : TryResolvePrimaryType(_primaryTypeHint)
             };
             
             return await Client.RequestClientLoadAssemblyAsync(req);
         }
 
-        public string TryResolvePrimaryType(string typeHint) 
+        public string? TryResolvePrimaryType(string typeHint)
             => IncrementalCompiler.TryResolvePrimaryType(typeHint);
 
         public Task PrintTrees(bool withDetail = false)
@@ -230,9 +230,9 @@ namespace Tbc.Host.Components.FileEnvironment
             return Task.CompletedTask;
         }
 
-        public async Task SetPrimaryTypeHint(string typeHint)
+        public async Task SetPrimaryTypeHint(string? maybeTypeHint)
         {
-            _primaryTypeHint = typeHint;
+            _primaryTypeHint = maybeTypeHint;
 
             if (_lastEmittedAssembly != null)
                 await SendAssemblyForReload(_lastEmittedAssembly);
@@ -298,7 +298,7 @@ namespace Tbc.Host.Components.FileEnvironment
                             break;
                         
                         default:
-                            Logger.LogWarning("Don't know how to handle subcommand '{SubCommand}' of context");
+                            Logger.LogWarning("Don't know how to handle subcommand '{SubCommand}' of context", sub);
                             break;                            
                     }
                                         
@@ -322,7 +322,7 @@ namespace Tbc.Host.Components.FileEnvironment
         {
             _loadContext = saveIdentifier;
             
-            Reset();
+            Reset().FireAndForgetSafeAsync();
         }
 
         public IEnumerable<IExposeCommands> Components 
@@ -356,6 +356,6 @@ namespace Tbc.Host.Components.FileEnvironment
     public class PersistedContext
     {
         public string? PrimaryTypeHint { get; set; }
-        public List<string> WatchedFiles { get; set; }
+        public List<string> WatchedFiles { get; set; } = new();
     }
 }

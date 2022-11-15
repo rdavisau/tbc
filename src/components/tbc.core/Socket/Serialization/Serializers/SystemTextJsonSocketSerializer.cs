@@ -29,7 +29,7 @@ public class SystemTextJsonSocketSerializer : ISocketSerializer
 
         var ret = JsonSerializer.Deserialize(gz, type, _serializerOptions);
 
-        return ret;
+        return ret!;
     }
 
     private readonly JsonSerializerOptions _serializerOptions = new(JsonSerializerDefaults.Web);

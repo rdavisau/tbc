@@ -16,7 +16,6 @@ using Roslyn.Reflection;
 using Tbc.Core.Models;
 using Tbc.Host.Components.Abstractions;
 using Tbc.Host.Components.CommandProcessor.Models;
-using Tbc.Host.Components.FileEnvironment.Models;
 using Tbc.Host.Components.FileWatcher.Models;
 using Tbc.Host.Components.GlobalUsingsResolver;
 using Tbc.Host.Components.GlobalUsingsResolver.Models;
@@ -24,7 +23,6 @@ using Tbc.Host.Components.IncrementalCompiler.Fixers;
 using Tbc.Host.Components.IncrementalCompiler.Models;
 using Tbc.Host.Components.SourceGeneratorResolver;
 using Tbc.Host.Components.SourceGeneratorResolver.Models;
-using Tbc.Host.Components.TargetClient;
 using Tbc.Host.Config;
 using Tbc.Host.Extensions;
 
@@ -32,8 +30,11 @@ namespace Tbc.Host.Components.IncrementalCompiler
 {
     public class IncrementalCompiler : ComponentBase<IncrementalCompiler>, IIncrementalCompiler, IDisposable, IExposeCommands
     {
+#pragma warning disable CS0414
         private bool _disposing;
-        
+#pragma warning restore CS0414
+        public string? _rootPath;
+
         private readonly AssemblyCompilationOptions _options;
         
         private readonly IFileSystem _fileSystem;
@@ -46,9 +47,6 @@ namespace Tbc.Host.Components.IncrementalCompiler
         private readonly object _lock = new object();
         private readonly string _identifier;
 
-        public string OutputPath { get; set; }
-        public string RootPath { get; set; }
-
         public ImmutableDictionary<SourceGeneratorReference,ResolveSourceGeneratorsResponse> SourceGeneratorResolution { get; set; }
         public (IEnumerable<ISourceGenerator> Srcs, IEnumerable<IIncrementalGenerator> Incs) SourceGenerators { get; set; }
         public bool AnySourceGenerators => SourceGenerators.Srcs.Any() || SourceGenerators.Incs.Any();
@@ -57,7 +55,6 @@ namespace Tbc.Host.Components.IncrementalCompiler
         
         public CSharpCompilation CurrentCompilation { get; set; }
         public Dictionary<string, SyntaxTree> RawTrees { get; } = new();
-
 
         public List<string> StagedFiles
             => CurrentCompilation.SyntaxTrees.Select(x => x.FilePath).ToList();
@@ -119,7 +116,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
                 ImmutableDictionary.Create<SourceGeneratorReference, ResolveSourceGeneratorsResponse>(),
                 (curr, next) => curr.Add(next, _sourceGeneratorResolver.ResolveSourceGenerators(new(next)).Result));
 
-        public EmittedAssembly StageFile(ChangedFile file, bool silent = false)
+        public EmittedAssembly? StageFile(ChangedFile file, bool silent = false)
         {
             var sw = Stopwatch.StartNew();
 
@@ -133,7 +130,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
                     path: file.Path, 
                     Encoding.Default);
 
-            EmittedAssembly emittedAssembly = null;
+            EmittedAssembly? emittedAssembly = null;
             
             WithCompilation(c =>
             {
@@ -193,10 +190,11 @@ namespace Tbc.Host.Components.IncrementalCompiler
 
                 if (!result.Success 
                     && _options.FixerOptions.Enabled 
-                    && TryApplyCompilationFixers(result, compilation, out var fixedResult, out emittedAssembly))
+                    && TryApplyCompilationFixers(result, compilation, out var fixedResult, out emittedAssembly)
+                    && fixedResult is { })
                     result = fixedResult;
 
-                if (!String.IsNullOrWhiteSpace(_options.WriteAssembliesPath)) 
+                if (!String.IsNullOrWhiteSpace(_options.WriteAssembliesPath) && emittedAssembly is { })
                     WriteEmittedAssembly(emittedAssembly);
 
                 var elapsed = sw.ElapsedMilliseconds;
@@ -367,14 +365,19 @@ namespace Tbc.Host.Components.IncrementalCompiler
             });
         
         public void PrintTrees(bool withDetail)
-        {           
-            Logger.LogInformation(RootPath);
+        {
+            if (_rootPath is null)
+            {
+                Logger.LogError("Can't print trees with null rootpath");
+
+                return;
+            }
             
             var output = RawTrees
                 .Select(rt =>
                 {
                     var (fn, tree) = rt;
-                    var relativePath = fn.Replace(RootPath, "");
+                    var relativePath = fn.Replace(_rootPath, "");
                     if (relativePath.StartsWith("/"))
                         relativePath = relativePath.Substring(1);
 
@@ -426,7 +429,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
             });
         }
 
-        public string TryResolvePrimaryType(string typeHint)
+        public string? TryResolvePrimaryType(string typeHint)
         {
             var candidates = 
                 RawTrees.Values
@@ -444,23 +447,23 @@ namespace Tbc.Host.Components.IncrementalCompiler
             return preferred;
         }
 
-        private string GetDescriptionForDiagnostic(SourceLocation Location, string Message)
+        private string GetDescriptionForDiagnostic(SourceLocation? Location, string Message)
         {
             try
             {
-                return $"{_fileSystem.Path.GetFileName(Location.SourceTree.FilePath)} " +
-                       $"[{Location.GetLineSpan().StartLinePosition}]: {Message}";
+                return $"{_fileSystem.Path.GetFileName(Location?.SourceTree.FilePath)} " +
+                       $"[{Location?.GetLineSpan().StartLinePosition}]: {Message}";
             }
-            catch (Exception ex)
-            {
-                return Message;
-            }
+            catch { return Message; }
         }
 
         public void Dispose()
         {
             _disposing = true;
         }
+
+        public void SetRootPath(string rootPath)
+            => _rootPath = rootPath;
 
         string IExposeCommands.Identifier 
             => $"inc-{_identifier}";
@@ -473,9 +476,9 @@ namespace Tbc.Host.Components.IncrementalCompiler
                 Execute = (_, args) =>
                 {
                     var detail = false;
-                    if (args.Any() && bool.TryParse(args[0], out detail)) ;
-                    
-                    PrintTrees(detail); 
+                    if (args.Any() && bool.TryParse(args[0], out detail))
+                        PrintTrees(detail);
+
                     return Task.CompletedTask;
                 }
             },
@@ -498,7 +501,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
                             break;
                         
                         default:
-                            Logger.LogWarning("Don't know how to handle subcommand '{SubCommand}' of tree");
+                            Logger.LogWarning("Don't know how to handle subcommand '{SubCommand}' of tree", sub);
                             break;                            
                     }
                                         

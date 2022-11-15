@@ -21,33 +21,26 @@ namespace Tbc.Host.Components.FileWatcher
         private readonly IFileSystem _fileSystem;
 
         public string WatchPath { get; private set; }
-        public ChangedFile LastChangedFile { get; private set; }
+        public ChangedFile? LastChangedFile { get; private set; }
 
-        private Subject<ChangedFile> _manualWatchFiles = new Subject<ChangedFile>();
+        private readonly Subject<ChangedFile> _manualWatchFiles = new Subject<ChangedFile>();
         public IObservable<ChangedFile> Changes { get; set; }
 
         public FileWatcher(FileWatchConfig config, IFileSystem fileSystem, ILogger<FileWatcher> logger) : base(logger)
         {
             _fileSystem = fileSystem;
             _config = config;
-            
-            Init();
+
+            WatchPath = _config.RootPath;
+            Changes = Observable.Merge(
+                        _manualWatchFiles, // files added to the incremental by a 'watch' command
+                        CreateFileSystemWatcher(_config.FileMask)); // files actually changed
         }
 
-        private void Init()
+        public IObservable<ChangedFile> CreateFileSystemWatcher(string mask)
         {
-            Changes =
-                Observable.Merge(
-                    _manualWatchFiles, // files added to the incremental by a 'watch' command
-                    CreateFileSystemWatcher(_config.RootPath, _config.FileMask)); // files actually changed
-        }
-        
-        public IObservable<ChangedFile> CreateFileSystemWatcher(string path, string mask)
-        {
-            WatchPath = path;
-                
             if (!_fileSystem.Path.IsPathRooted(WatchPath))
-                WatchPath = _fileSystem.Path.Combine(Environment.CurrentDirectory, path);
+                WatchPath = _fileSystem.Path.Combine(Environment.CurrentDirectory, WatchPath);
             
             Logger.LogInformation("Watching files under path {Path}", WatchPath);
 
@@ -64,19 +57,20 @@ namespace Tbc.Host.Components.FileWatcher
 
             var ret =
                 Observable
-                    .Merge(ofsw.Changed, ofsw.Created, ofsw.Renamed, ofsw.Deleted)
-                    .Where(x => !_config.Ignore.Any(i => x.FullPath.Contains((string) i)))
-                    .Select(x => x.FullPath)
-                    .Select(TryGetChangedFile)
-                    .Where(x => x != null)
-                    .Do(f => Logger.LogInformation("Changed File: {ChangedFile}", f.Path.Substring(WatchPath.Length)));
+                   .Merge(ofsw.Changed, ofsw.Created, ofsw.Renamed, ofsw.Deleted)
+                   .Where(x => !_config.Ignore.Any(i => x.FullPath.Contains((string)i)))
+                   .Select(x => x.FullPath)
+                   .Select(TryGetChangedFile)
+                   .Where(x => x != null)
+                   .Select(x => (ChangedFile) x!) // in order to return non-null
+                   .Do(f => Logger.LogInformation("Changed File: {ChangedFile}", f!.Path.Substring(WatchPath.Length)));
 
             ofsw.Start();
 
             return ret;
         }
 
-        private ChangedFile TryGetChangedFile(string filePath)
+        private ChangedFile? TryGetChangedFile(string filePath)
         {
             try
             {
@@ -123,7 +117,7 @@ namespace Tbc.Host.Components.FileWatcher
             var inputPath = args[0];
 
             var lastPath = LastChangedFile.Path;
-            var lastDirectory = Path.GetDirectoryName(lastPath);
+            var lastDirectory = Path.GetDirectoryName(lastPath)!;
 
             var targetPath = Path.Combine(lastDirectory, inputPath);
             var filesInPath =
@@ -135,7 +129,8 @@ namespace Tbc.Host.Components.FileWatcher
                 inputPath, targetPath, filesInPath);
 
             foreach (var file in filesInPath)
-                _manualWatchFiles.OnNext(TryGetChangedFile(file));
+                if (TryGetChangedFile(file) is {} cf)
+                    _manualWatchFiles.OnNext(cf);
 
             return Task.CompletedTask;
         }
