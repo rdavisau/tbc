@@ -45,7 +45,7 @@ namespace Tbc.Host.Components.CommandProcessor
                     , Formatting.Indented));
         }
 
-        public async Task<object> HandleCommand(string command)
+        public async Task<object?> HandleCommand(string command)
         {
             if (String.IsNullOrWhiteSpace(command))
                 return null;

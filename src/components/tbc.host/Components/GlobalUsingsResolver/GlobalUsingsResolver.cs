@@ -21,7 +21,7 @@ public class GlobalUsingsResolver : ComponentBase<GlobalUsingsResolver>, IGlobal
         _fileSystem = fileSystem;
     }
 
-    public async Task<ResolveGlobalUsingsResponse> ResolveGlobalUsings(ResolveGlobalUsingsRequest request, CancellationToken canceller = default)
+    public Task<ResolveGlobalUsingsResponse> ResolveGlobalUsings(ResolveGlobalUsingsRequest request, CancellationToken canceller = default)
     {
         var sources = request.Sources;
         var usings = ImmutableList.Create<string>();
@@ -43,10 +43,10 @@ public class GlobalUsingsResolver : ComponentBase<GlobalUsingsResolver>, IGlobal
 
         usings = usings.Distinct().ToImmutableList();
 
-        return new ResolveGlobalUsingsResponse(
+        return Task.FromResult(new ResolveGlobalUsingsResponse(
             sources, usings.Distinct().ToImmutableList(), 
             usings.Any() ? String.Join(Environment.NewLine, usings) : null, 
-            diagnostics);
+            diagnostics));
     }
 
     public (List<string> Usings, Dictionary<string, object> Diagnostics) GetUsingsFromText(string text)
@@ -61,7 +61,7 @@ public class GlobalUsingsResolver : ComponentBase<GlobalUsingsResolver>, IGlobal
     }
     
     public (List<string> Usings, Dictionary<string, object> Diagnostics) GetUsingsFromSearchPath(
-        string path, string maybeResolutionMethod)
+        string path, string? maybeResolutionMethod)
     {
         maybeResolutionMethod ??= KnownGlobalUsingSearchPathResolutionApproach.LastModified;
         

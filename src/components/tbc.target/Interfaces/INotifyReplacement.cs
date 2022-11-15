@@ -4,6 +4,6 @@ namespace Tbc.Target.Interfaces
 {
     public interface INotifyReplacement
     {
-        Action<IReloadManager> NotifyReplacement { get; set; }
+        Action<IReloadManager>? NotifyReplacement { get; set; }
     }
 }

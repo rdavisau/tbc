@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.1</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <RootNamespace>Tbc.Host</RootNamespace>
         <LangVersion>preview</LangVersion>        
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <DebugType>embedded</DebugType>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -16,13 +17,13 @@
     <ItemGroup>
         <PackageReference Include="DryIoc.Microsoft.DependencyInjection" Version="5.1.0" />
         <PackageReference Include="IgnoresAccessChecksToGenerator" Version="0.5.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.0-1.final" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
         <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
         <PackageReference Include="NuGet.Configuration" Version="6.1.0" />
         <PackageReference Include="OneOf" Version="3.0.216" />
-        <PackageReference Include="ReactiveFileSystemWatcher" Version="0.1.2.1" />
+        <PackageReference Include="RxFileSystemWatcher" Version="1.0.0" />
         <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20303.1" />
         <PackageReference Include="System.IO.Abstractions" Version="13.2.15" />
         <PackageReference Include="System.Linq.Async" Version="6.0.1" />

@@ -6,9 +6,9 @@ namespace Tbc.Host.Components.CommandProcessor.Models
 {
     public class TbcCommand
     {
-        public string Command { get; set; }
+        public required string Command { get; init; }
         
         [JsonIgnore]
-        public Func<string, string[], Task> Execute { get; set; }
+        public required Func<string, string[], Task> Execute { get; init; }
     }
 }

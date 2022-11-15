@@ -1,12 +1,12 @@
 namespace Tbc.Host.Components.IncrementalCompiler.Models
 {
-    public class EmittedAssembly
+    public record EmittedAssembly
     {
-        public string AssemblyName { get; set; }
-        public byte[] Pe { get; set; }
-        public byte[] Pd { get; set; }
+        public required string AssemblyName { get; init; }
+        public required byte[] Pe { get; init; }
+        public byte[]? Pd { get; init; }
 
         public bool HasDebugSymbols =>
-            Pd != null && Pd.Length > 0;
+            Pd is { Length: > 0 };
     }
 }

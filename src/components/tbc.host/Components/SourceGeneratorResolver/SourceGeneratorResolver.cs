@@ -29,7 +29,7 @@ public class SourceGeneratorResolver : ComponentBase<SourceGeneratorResolver>, I
         _fileSystem = fileSystem;
     }
 
-    public async Task<ResolveSourceGeneratorsResponse> ResolveSourceGenerators(ResolveSourceGeneratorsRequest request, 
+    public Task<ResolveSourceGeneratorsResponse> ResolveSourceGenerators(ResolveSourceGeneratorsRequest request,
         CancellationToken canceller = default)
     {
         var (req, (kind, reference, context)) = (request.Reference, request.Reference);
@@ -47,12 +47,27 @@ public class SourceGeneratorResolver : ComponentBase<SourceGeneratorResolver>, I
         srcs = srcs.GroupBy(x => x.GetType()).Select(x => x.First()).ToImmutableList();
         incs = incs.GroupBy(x => x.GetType()).Select(x => x.First()).ToImmutableList();
 
-        return new ResolveSourceGeneratorsResponse(req, srcs, incs, diags);
+        return Task.FromResult(new ResolveSourceGeneratorsResponse(req, srcs, incs, diags));
     }
 
     private (ImmutableList<ISourceGenerator> Srcs, ImmutableList<IIncrementalGenerator> Incs, ImmutableDictionary<string, object> Diags) 
-        GetGeneratorsFromNugetPackageReference(string package, string version)
+        GetGeneratorsFromNugetPackageReference(string package, string? maybeVersion)
     {
+        var version = maybeVersion
+            ?? _fileSystem.Directory.GetDirectories(_fileSystem.Path.Combine(GetNugetPackageCachePath, package))
+                   .OrderByDescending(x => x)
+                   .FirstOrDefault();
+
+        if (String.IsNullOrWhiteSpace(version))
+        {
+            Logger.LogWarning("No version provided for source generator package {Package} and none could be inferred",
+                package);
+
+            return (Srcs: ImmutableList.Create<ISourceGenerator>(),
+                Incs: ImmutableList.Create<IIncrementalGenerator>(),
+                Diags: ImmutableDictionary.Create<string, object>());
+        }
+
         var nugetPath = _fileSystem.Path.Combine(GetNugetPackageCachePath, package, version);
         var dllPaths = _fileSystem.Directory.GetFiles(nugetPath, "*.dll", SearchOption.AllDirectories)
            .Where(x => x.Contains("roslyn4.0/cs", StringComparison.InvariantCultureIgnoreCase) || x.Contains("roslyn4.0\\cs", StringComparison.InvariantCultureIgnoreCase));
@@ -75,7 +90,7 @@ public class SourceGeneratorResolver : ComponentBase<SourceGeneratorResolver>, I
     {
         var diagnostics = ImmutableDictionary.Create<string, object>();
 
-        Assembly asm = null;
+        Assembly asm = null!;
         try { asm = Assembly.LoadFile(path); }
         catch (Exception ex)
         {
@@ -114,8 +129,9 @@ public class SourceGeneratorResolver : ComponentBase<SourceGeneratorResolver>, I
             doc.DescendantNodes()
                .OfType<XElement>()
                .Where(x => x.Name.LocalName == "PackageReference")
-               .Select(pr => new PackageReference(pr.Attribute("Include")?.Value, pr.Attribute("Version")?.Value))
+               .Select(pr => new { Include = pr.Attribute("Include")?.Value, Version = pr.Attribute("Version")?.Value })
                .Where(x => x.Include is not null && x.Version is not null)
+               .Select(pr => new PackageReference(pr.Include!, pr.Version!))
                .ToList();
 
         foreach (var packageReference in packageReferences)

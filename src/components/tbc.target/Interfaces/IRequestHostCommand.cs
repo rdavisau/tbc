@@ -6,6 +6,6 @@ namespace Tbc.Target.Interfaces
 {
     public interface IRequestHostCommand
     {
-        Func<CommandRequest, Task> RequestHostCommand { get; set; }
+        Func<CommandRequest, Task>? RequestHostCommand { get; set; }
     }
 }

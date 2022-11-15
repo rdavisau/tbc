@@ -67,11 +67,7 @@ public class AssemblyLoaderService : ITbcTarget, ISendToRemote
                 ? asm.GetTypes().FirstOrDefault(x => x.Name.EndsWith(request.PrimaryTypeName))
                 : null;
 
-            var req = new ProcessNewAssemblyRequest
-            {
-                Assembly = asm,
-                PrimaryType = primaryType
-            };
+            var req = new ProcessNewAssemblyRequest(asm, primaryType);
 
             return await _reloadManager.ProcessNewAssembly(req);
         }
@@ -106,7 +102,7 @@ public class AssemblyLoaderService : ITbcTarget, ISendToRemote
         }
     }
 
-    public async Task<Outcome> SynchronizeDependencies(CachedAssemblyState cachedAssemblyState)
+    public Task<Outcome> SynchronizeDependencies(CachedAssemblyState cachedAssemblyState)
     {
         _cachedAssemblyState = cachedAssemblyState.CachedAssemblies.GroupBy(x => x.AssemblyLocation)
            .ToDictionary(x => x.Key, x => x.ToList());
@@ -126,15 +122,15 @@ public class AssemblyLoaderService : ITbcTarget, ISendToRemote
                     => await WriteIfNecessary(args.LoadedAssembly);
             });
 
-        return new Outcome { Success = true };
+        return Task.FromResult(new Outcome { Success = true });
     }
 
-    public async Task RequestCommand(CommandRequest req)
-        => await Remote.SendRequest<ExecuteCommandRequest, Outcome>(new ExecuteCommandRequest
+    public Task RequestCommand(CommandRequest req)
+        => Remote is {} r ? r.SendRequest<ExecuteCommandRequest, Outcome>(new ExecuteCommandRequest
         {
             Command = req.Command,
             Args = req.Args.ToList()
-        });
+        }) : Task.CompletedTask;
 
     private readonly AsyncLock _mutex = new();
     private Dictionary<string, List<CachedAssembly>> _cachedAssemblyState = new();
@@ -167,7 +163,7 @@ public class AssemblyLoaderService : ITbcTarget, ISendToRemote
 
                 _log($"Will send {asm.FullName} - {sw.Elapsed}");
 
-                await Remote.SendRequest<AssemblyReference, Outcome>(@ref);
+                await Remote!.SendRequest<AssemblyReference, Outcome>(@ref);
 
                 _log($"Sent {asm.FullName} - {sw.Elapsed}");
                 _cachedAssemblyState[asm.Location] = new List<CachedAssembly> { new(@ref) };

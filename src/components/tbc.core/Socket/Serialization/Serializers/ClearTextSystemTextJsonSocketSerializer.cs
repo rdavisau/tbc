@@ -18,7 +18,7 @@ public class ClearTextSystemTextJsonSocketSerializer : ISocketSerializer
         var json = Encoding.UTF8.GetString(data);
         var ret = JsonSerializer.Deserialize(json, type, _serializerOptions);
 
-        return ret;
+        return ret!;
     }
 
     private readonly JsonSerializerOptions _serializerOptions = new(JsonSerializerDefaults.Web);

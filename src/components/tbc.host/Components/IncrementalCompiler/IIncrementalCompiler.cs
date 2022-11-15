@@ -7,16 +7,15 @@ namespace Tbc.Host.Components.IncrementalCompiler
 {
     public interface IIncrementalCompiler
     {
-        string OutputPath { get; set; }
-        string RootPath { get; set; }
         List<string> StagedFiles { get; }
-        EmittedAssembly StageFile(ChangedFile file) => StageFile(file, false);
-        EmittedAssembly StageFile(ChangedFile file, bool silent = false);
+        EmittedAssembly? StageFile(ChangedFile file) => StageFile(file, false);
+        EmittedAssembly? StageFile(ChangedFile file, bool silent = false);
         void AddMetadataReference(AssemblyReference asm);
         void ClearReferences();
         void ClearTrees();
         void PrintTrees(bool withDetail);
-        string TryResolvePrimaryType(string typeHint);
+        string? TryResolvePrimaryType(string typeHint);
         void DoWarmup();
+        void SetRootPath(string rootPath);
     }
 }
