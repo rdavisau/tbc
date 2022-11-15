@@ -24,12 +24,12 @@ public class iOSDynamicRegistrationAttributeRewriter : CSharpSyntaxRewriter
     public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node)
     {
         var symbol = _semanticModel.GetDeclaredSymbolForNode(node);
-        if (symbol is null) return base.VisitClassDeclaration(node);
+        if (symbol is null) return base.VisitClassDeclaration(node)!;
 
         var symbolReference = $"{symbol.ContainingNamespace}.{symbol.MetadataName}";
         var type = _metadataLoadContext.ResolveType(symbolReference);
         if (type is null)
-            return base.VisitClassDeclaration(node);
+            return base.VisitClassDeclaration(node)!;
 
         if (type.IsSubclassOf(_nsObject))
         {
@@ -51,6 +51,6 @@ public class iOSDynamicRegistrationAttributeRewriter : CSharpSyntaxRewriter
             return updatedNode;
         }
 
-        return base.VisitClassDeclaration(node);
+        return base.VisitClassDeclaration(node)!;
     }
 }

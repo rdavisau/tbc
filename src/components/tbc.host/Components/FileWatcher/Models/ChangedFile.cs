@@ -4,9 +4,9 @@ namespace Tbc.Host.Components.FileWatcher.Models
 {
     public class ChangedFile
     {
-        public string Path { get; set; }
-        internal string Contents { get; set; }
-        public DateTimeOffset ChangedAt { get; set; } 
+        public required string Path { get; init; }
+        public required string Contents { get; init; }
+        public DateTimeOffset ChangedAt { get; init; }
             = DateTimeOffset.Now;
 
         public override string ToString()

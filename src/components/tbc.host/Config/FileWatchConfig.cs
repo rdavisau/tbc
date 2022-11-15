@@ -4,8 +4,8 @@ namespace Tbc.Host.Config
 {
     public class FileWatchConfig
     {
-        public string RootPath { get; set; }
+        public required string RootPath { get; init; }
         public List<string> Ignore { get; set; } = new List<string>();
-        public string FileMask { get; set; }
+        public string FileMask { get; set; } = "*.cs";
     }
 }

@@ -24,7 +24,7 @@ namespace Tbc.Target
             Configuration = configuration;
         }
 
-        public async Task Run(IReloadManager reloadManager, Action<string> log = null)
+        public Task Run(IReloadManager reloadManager, Action<string>? log = null)
         {
             log ??= Console.WriteLine;
 
@@ -54,6 +54,8 @@ namespace Tbc.Target
             {
                 log($"socket loop faulted: {t.Exception}");
             });
+
+            return Task.CompletedTask;
         }
     }
 }
