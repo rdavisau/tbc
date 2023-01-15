@@ -29,16 +29,23 @@ public class GlobalUsingsResolver : ComponentBase<GlobalUsingsResolver>, IGlobal
 
         foreach (var source in sources)
         {
-            var (newUsings, newDiagnostics) = 
-                source.Kind switch
-                {
-                    GlobalUsingsSourceKind.Text => GetUsingsFromText(source.Reference),
-                    GlobalUsingsSourceKind.SearchPath => GetUsingsFromSearchPath(source.Reference, source.Context),
-                    _ => throw new ArgumentOutOfRangeException()
-                };
+            try
+            {
+                var (newUsings, newDiagnostics) =
+                    source.Kind switch
+                    {
+                        GlobalUsingsSourceKind.Text => GetUsingsFromText(source.Reference),
+                        GlobalUsingsSourceKind.SearchPath => GetUsingsFromSearchPath(source.Reference, source.Context),
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
 
-            usings = usings.AddRange(newUsings);
-            diagnostics = diagnostics.AddRange(newDiagnostics);
+                usings = usings.AddRange(newUsings);
+                diagnostics = diagnostics.AddRange(newDiagnostics);
+            }
+            catch (Exception ex)
+            {
+                diagnostics = diagnostics.Add(source.Reference, $"Failed to process global using reference {ex}");
+            }
         }
 
         usings = usings.Distinct().ToImmutableList();
