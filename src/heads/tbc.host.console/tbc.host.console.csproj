@@ -5,6 +5,14 @@
         <TargetFrameworks>net7.0</TargetFrameworks>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <PackAsTool>true</PackAsTool>
+        <PackageId>tbc.console</PackageId>
+        <ToolCommandName>tbc</ToolCommandName>
+        <PackageOutputPath>../../../output</PackageOutputPath>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    </PropertyGroup>
+
     <ItemGroup>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     </ItemGroup>
