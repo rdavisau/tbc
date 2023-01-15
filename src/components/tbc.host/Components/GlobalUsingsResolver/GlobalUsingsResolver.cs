@@ -14,6 +14,8 @@ namespace Tbc.Host.Components.GlobalUsingsResolver;
 
 public class GlobalUsingsResolver : ComponentBase<GlobalUsingsResolver>, IGlobalUsingsResolver
 {
+    private const string DefaultGlobalUsingsPattern = "*.GlobalUsings.g.cs";
+
     private IFileSystem _fileSystem;
     
     public GlobalUsingsResolver(ILogger<GlobalUsingsResolver> logger, IFileSystem fileSystem) : base(logger)
@@ -71,8 +73,9 @@ public class GlobalUsingsResolver : ComponentBase<GlobalUsingsResolver>, IGlobal
         string path, string? maybeResolutionMethod)
     {
         maybeResolutionMethod ??= KnownGlobalUsingSearchPathResolutionApproach.LastModified;
-        
-        var matches = _fileSystem.Directory.GetFiles(path, "*.GlobalUsings.g.cs", SearchOption.AllDirectories)
+
+        var (search, mask) = GetFilePathAndMask(path);
+        var matches = _fileSystem.Directory.GetFiles(search, mask, SearchOption.AllDirectories)
            .OrderByDescending(x => _fileSystem.FileInfo.FromFileName(x).LastWriteTime)
            .ToList();
 
@@ -82,5 +85,25 @@ public class GlobalUsingsResolver : ComponentBase<GlobalUsingsResolver>, IGlobal
            .ToList();
 
         return (usings.SelectMany(x => x.u).ToList(), usings.ToDictionary(x => x.f, x => (object) $"{x.u.Count} usings extracted"));
+    }
+
+    // use a gross heuristic to decide whether we think the user provided a filemask
+    // one day implement polymorphic deserialization in config so that the different kinds of global using references
+    // can use their own sensible fields
+    private (string Path, string Kask) GetFilePathAndMask(string path)
+    {
+        // this will be
+        // - nothing, if a directory was specified with trailing /
+        // - the leaf directory name, if a directory was specified without trailing /
+        // - a filename/mask, if one was specified
+        var maybeFn = _fileSystem.Path.GetFileName(path);
+        if (!maybeFn.EndsWith(".cs")) // assume any filemask specified ends in .cs
+            return (path, DefaultGlobalUsingsPattern);
+
+        var search = _fileSystem.Path.GetDirectoryName(path);
+        if (String.IsNullOrWhiteSpace(search)) // allow the user to just specify a mask/filename
+            search = ".";
+
+        return (search, maybeFn);
     }
 }
