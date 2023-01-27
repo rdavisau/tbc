@@ -71,6 +71,7 @@ namespace Tbc.Host.Components.FileEnvironment
                 .Select(IncrementalCompiler.StageFile)
                 .Where(x => x != null)
                 .SelectMany(SendAssemblyForReload!)
+                .Where(x => x is not null)
                 .Subscribe(x => Logger.Log(x.Success ? LogLevel.Information : LogLevel.Error, "Send incremental assembly outcome: {@Outcome}", x));
             
             Logger.LogInformation("FileEnvironment for client {@Client} initialised", Client);
