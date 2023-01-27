@@ -244,13 +244,13 @@ namespace Tbc.Host.Components.IncrementalCompiler
         {
             Logger.LogInformation("Writing emitted assembly {@Assembly}", emittedAssembly);
             
-            var peOut = _fileSystem.Path.Combine(_options.WriteAssembliesPath, $"{emittedAssembly.AssemblyName}.dll");
-            var pdOut = _fileSystem.Path.Combine(_options.WriteAssembliesPath, $"{emittedAssembly.AssemblyName}.pdb");
+            var peOut = _fileSystem.Path.Combine(_options.WriteAssembliesPath!, $"{emittedAssembly.AssemblyName}.dll");
+            var pdOut = _fileSystem.Path.Combine(_options.WriteAssembliesPath!, $"{emittedAssembly.AssemblyName}.pdb");
 
             _fileSystem.File.WriteAllBytes(peOut, emittedAssembly.Pe);
 
-            if (_options.EmitDebugInformation)
-                _fileSystem.File.WriteAllBytes(pdOut, emittedAssembly.Pd);
+            if (_options.EmitDebugInformation && emittedAssembly.Pd is {} pdb)
+                _fileSystem.File.WriteAllBytes(pdOut, pdb);
         }
 
         public void AddMetadataReference(AssemblyReference asm)

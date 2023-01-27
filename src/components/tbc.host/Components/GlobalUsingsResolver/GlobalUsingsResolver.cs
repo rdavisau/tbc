@@ -76,7 +76,7 @@ public class GlobalUsingsResolver : ComponentBase<GlobalUsingsResolver>, IGlobal
 
         var (search, mask) = GetFilePathAndMask(path);
         var matches = _fileSystem.Directory.GetFiles(search, mask, SearchOption.AllDirectories)
-           .OrderByDescending(x => _fileSystem.FileInfo.FromFileName(x).LastWriteTime)
+           .OrderByDescending(x => _fileSystem.FileInfo.New(x).LastWriteTime)
            .ToList();
 
         var usings = matches

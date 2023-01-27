@@ -83,8 +83,8 @@ public class SocketTargetClient : ComponentBase<SocketTargetClient>, ITargetClie
         }
     }
 
-    public Task<TargetHello> Hello(HostHello hello) =>
-        Target!.SendRequest<HostHello, TargetHello>(hello);
+    public Task<TargetHello?> Hello(HostHello hello)
+    => Target!.SendRequest<HostHello, TargetHello>(hello);
 
     public Task<IAsyncEnumerable<AssemblyReference>> AssemblyReferences(List<AssemblyReference> assemblyReferences)
     {
@@ -99,15 +99,18 @@ public class SocketTargetClient : ComponentBase<SocketTargetClient>, ITargetClie
     public Task<IAsyncEnumerable<ExecuteCommandRequest>> CommandRequests()
         => Task.FromResult(_incomingCommandRequests.ToAsyncEnumerable());
 
-    public Task<Outcome> RequestClientExecAsync(ExecuteCommandRequest req)
-        => Target!.SendRequest<ExecuteCommandRequest, Outcome>(req);
+    public async Task<Outcome> RequestClientExecAsync(ExecuteCommandRequest req)
+    {
+        var result = await Target!.SendRequest<ExecuteCommandRequest, Outcome>(req);
+        return result ?? new Outcome { Success = false, Messages = new() { new() { Message = "Socket disconnected" } } };
+    }
 
     public async Task<Outcome> RequestClientLoadAssemblyAsync(LoadDynamicAssemblyRequest req)
     {
         var sw = Stopwatch.StartNew();
         var result = await Target!.SendRequest<LoadDynamicAssemblyRequest, Outcome>(req);
         Logger.LogInformation("Round trip for LoadAssembly with primary type {PrimaryTypeName}, {Duration}ms", req.PrimaryTypeName, sw.ElapsedMilliseconds);
-        return result;
+        return result ?? new Outcome { Success = false, Messages = new() { new() { Message = "Socket disconnected" } } };
     }
 
     public Task WaitForTerminalState() =>

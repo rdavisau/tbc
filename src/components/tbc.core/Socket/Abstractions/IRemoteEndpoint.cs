@@ -5,5 +5,5 @@ namespace Tbc.Core.Socket.Abstractions;
 
 public interface IRemoteEndpoint
 {
-    public Task<TResponse> SendRequest<TRequest, TResponse>(TRequest request, CancellationToken canceller = default);
+    public Task<TResponse?> SendRequest<TRequest, TResponse>(TRequest request, CancellationToken canceller = default);
 }

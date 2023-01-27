@@ -93,6 +93,9 @@ namespace Tbc.Host.Components.FileEnvironment
                 var ctx = JsonConvert.DeserializeObject<PersistedContext>(
                     await File.ReadAllTextAsync($"{_loadContext}.json"));
 
+                if (ctx is null)
+                    return;
+
                 foreach (var file in ctx.WatchedFiles.Select(x => new ChangedFile { Path = x, Contents = File.ReadAllText(x) }))
                     IncrementalCompiler.StageFile(file, silent: true);
 
@@ -122,6 +125,8 @@ namespace Tbc.Host.Components.FileEnvironment
 
             var tempFilePath = FileSystem.Path.GetTempFileName();
             var targetHello = await Client.Hello(new HostHello { SharedHostFilePath = tempFilePath });
+            if (targetHello is null)
+                throw new Exception("Remote disconnected");
 
             var sharedFilesystem = targetHello.CanAccessSharedHostFile;
             var existingReferences = new List<AssemblyReference>();
@@ -344,7 +349,7 @@ namespace Tbc.Host.Components.FileEnvironment
                 var reference = new AssemblyReference
                 {
                     AssemblyLocation = f,
-                    ModificationTime = FileSystem.FileInfo.FromFileName(f).LastWriteTime,
+                    ModificationTime = FileSystem.FileInfo.New(f).LastWriteTime,
                     PeBytes = await FileSystem.File.ReadAllBytesAsync(f)
                 };
 

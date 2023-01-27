@@ -14,7 +14,7 @@ public interface ITargetClient : IDisposable
     Task WaitForTerminalState();
     IObservable<CanonicalChannelState> ClientChannelState { get; }
 
-    Task<TargetHello> Hello(HostHello hello);
+    Task<TargetHello?> Hello(HostHello hello);
     Task<IAsyncEnumerable<AssemblyReference>> AssemblyReferences(List<AssemblyReference> existing);
     Task<IAsyncEnumerable<ExecuteCommandRequest>> CommandRequests();
     Task<Outcome> RequestClientExecAsync(ExecuteCommandRequest req);

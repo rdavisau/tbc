@@ -149,7 +149,7 @@ public class SocketServer<TProtocol> : IRemoteEndpoint
         }
     }
 
-    public async Task<TResponse> SendRequest<TRequest, TResponse>(TRequest request, CancellationToken ct = default)
+    public async Task<TResponse?> SendRequest<TRequest, TResponse>(TRequest request, CancellationToken ct = default)
     {
         if (request == null) throw new ArgumentNullException(nameof(request));
 
@@ -158,7 +158,7 @@ public class SocketServer<TProtocol> : IRemoteEndpoint
             _log("ignoring attempt to send message on finished socket server, please find the caller " +
                  "who did this and prevent them from doing this >:)");
 
-            return default!;
+            return default;
         }
 
         var responseMessageId =
