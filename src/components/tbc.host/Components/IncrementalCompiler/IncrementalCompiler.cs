@@ -481,8 +481,10 @@ namespace Tbc.Host.Components.IncrementalCompiler
                 Execute = (_, args) =>
                 {
                     var detail = false;
-                    if (args.Any() && bool.TryParse(args[0], out detail))
-                        PrintTrees(detail);
+                    if (args.Any())
+                        bool.TryParse(args[0], out detail);
+
+                    PrintTrees(detail);
 
                     return Task.CompletedTask;
                 }
