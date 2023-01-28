@@ -222,8 +222,15 @@ namespace Tbc.Host.Components.FileEnvironment
                     ? null
                     : TryResolvePrimaryType(_primaryTypeHint)
             };
-            
-            return await Client.RequestClientLoadAssemblyAsync(req);
+
+            try { return await Client.RequestClientLoadAssemblyAsync(req); }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to request assembly load, probably due to remote disconnect. " +
+                                    "Terminated: {Terminated}", Terminated);
+
+                return new Outcome { Success = false };
+            }
         }
 
         public string? TryResolvePrimaryType(string typeHint)
