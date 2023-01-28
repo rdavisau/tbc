@@ -36,7 +36,7 @@ tbc will probably always have rough edges/require 'hard work' because an officia
 
 # how to use
 
-1. run a tbc 'host' e.g. `tbc.host.console` from the releases page [*1]. see the video above, I like to run it from the IDE's integrated terminal
+1. install a tbc 'host' e.g. `tbc.host.console`: `dotnet tool install -g tbc.console --add-source https://myget.org/F/rdavisau/api/v3/index.json`
 
 2. add the tbc 'target' package to your reloadable app, for now it's a prerelease on MyGet (`tbc.target` in https://www.myget.org/F/rdavisau/api/v3/index.json)
 
@@ -57,7 +57,9 @@ tbc will probably always have rough edges/require 'hard work' because an officia
     });
     ```
 
-5. start making changes! (save to update)
+5. run `tbc` from the root of your solution, optionally with a `reload-config.json` file. see the video above, I like to run it from the IDE's integrated terminal
+
+6. start making changes! (save to update)
 
 
 [*1] right now there is only a console host that watches addresses specified by config, but you could imagine an ide extension replicating the same small set of user interface functionality but with broadcast etc. You could use `tbc.host.console` to hot reload building `tbc.host.visualstudio` or `tbc.host.vs4mac` (kinda like [here](https://twitter.com/rdavis_au/status/1179537272380649472)).
