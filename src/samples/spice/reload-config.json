@@ -1,0 +1,39 @@
+{
+  "ConsoleHost": {
+    "ExpectedClients": [
+      {
+        "Address": "localhost",
+        "Port": 50125
+      }
+    ]
+  },
+  "FileWatcher": {
+    "RootPath": ".",
+    "Ignore": [
+      "/obj/",
+      "/bin/"
+    ]
+  },
+  "AssemblyCompiler": {
+    "Debug": true,
+    "PreprocessorSymbols": [
+      "DEBUG",
+      "__RELOAD__"
+    ],
+    "GlobalUsingsSources": [
+      {
+        "Kind": "SearchPath",
+        "Reference": ".",
+        "Context": "LastModified"
+      },
+      {
+        "Kind": "SearchPath",
+        "Reference": "./GlobalUsings.cs",
+        "Context": "LastModified"
+      }
+    ],
+    "iOSDynamicRegistrationOptions": {
+      "Enabled": true
+    }
+  }
+}
