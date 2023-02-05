@@ -45,6 +45,10 @@ namespace tbc.host.console
                             Ignore = { "/obj/", "/bin/" }   
                         }
                         .ToJObject()
+
+                [KnownConfigurationKeys.FileEnvironment]
+                    = new FileEnvironmentConfig { }
+                       .ToJObject(),
             };
         }
     }
