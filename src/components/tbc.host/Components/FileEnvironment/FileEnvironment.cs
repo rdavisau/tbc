@@ -17,30 +17,41 @@ using Tbc.Host.Components.FileWatcher.Models;
 using Tbc.Host.Components.IncrementalCompiler;
 using Tbc.Host.Components.IncrementalCompiler.Models;
 using Tbc.Host.Components.TargetClient;
+using Tbc.Host.Config;
 using Tbc.Host.Extensions;
 
 namespace Tbc.Host.Components.FileEnvironment
 {
     public partial class FileEnvironment : TransientComponentBase<FileEnvironment>, IFileEnvironment, IExposeCommands, IHaveComponentsThatExposeCommands
     {
+        public FileEnvironmentConfig Config { get; }
         public ITargetClient Client { get; }
         public ICommandProcessor CommandProcessor { get; }
         public IFileWatcher FileWatcher { get; }
         public IIncrementalCompiler IncrementalCompiler { get; }
         public IFileSystem FileSystem { get; set; }
 
-        public FileEnvironment(IRemoteClientDefinition client,
+        public FileEnvironment(
+            FileEnvironmentConfig config,
+            IRemoteClientDefinition client,
             IFileWatcher fileWatcher, ICommandProcessor commandProcessor,
             Func<IRemoteClientDefinition, ITargetClient> targetClientFactory,
             Func<string, IIncrementalCompiler> incrementalCompilerFactory,
             ILogger<FileEnvironment> logger, IFileSystem fileSystem) : base(logger)
         {
+            Config = config;
             Client = targetClientFactory(client);
             CommandProcessor = commandProcessor;
             FileSystem = fileSystem;
             FileWatcher = fileWatcher;
             IncrementalCompiler = incrementalCompilerFactory($"{client.Address}:{client.Port}");
             IncrementalCompiler.SetRootPath(FileWatcher.WatchPath);
+
+            if (config.LoadContext is { } lc)
+            {
+                Logger.LogInformation("Using load context from configuration: {Context}", lc);
+                _loadContext = Config?.LoadContext;
+            }
         }
 
         private bool _running;
@@ -48,7 +59,7 @@ namespace Tbc.Host.Components.FileEnvironment
         private string? _primaryTypeHint;
         private EmittedAssembly? _lastEmittedAssembly;
         private string? _loadContext;
-        
+
         public async Task Run()
         {
             if (_running)
@@ -90,16 +101,27 @@ namespace Tbc.Host.Components.FileEnvironment
         {
             if (!String.IsNullOrWhiteSpace(_loadContext))
             {
-                var ctx = JsonConvert.DeserializeObject<PersistedContext>(
-                    await File.ReadAllTextAsync($"{_loadContext}.json"));
+                try
+                {
+                    var ctx = JsonConvert.DeserializeObject<PersistedContext>(
+                        await File.ReadAllTextAsync($"{_loadContext}.json"));
 
-                if (ctx is null)
-                    return;
+                    Logger.LogInformation("Restoring load context: {@Context}", ctx);
 
-                foreach (var file in ctx.WatchedFiles.Select(x => new ChangedFile { Path = x, Contents = File.ReadAllText(x) }))
-                    IncrementalCompiler.StageFile(file, silent: true);
+                    if (ctx is null)
+                        return;
 
-                await SetPrimaryTypeHint(ctx.PrimaryTypeHint);
+                    foreach (var file in ctx.WatchedFiles
+                                .Where(x => !String.IsNullOrWhiteSpace(x) && FileSystem.File.Exists(x))
+                                .Select(x => new ChangedFile { Path = x, Contents = FileSystem.File.ReadAllText(x) }))
+                        IncrementalCompiler.StageFile(file, silent: true);
+
+                    await SetPrimaryTypeHint(ctx.PrimaryTypeHint);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Failed to process load context {Context}", _loadContext);
+                }
             }
         }
 
