@@ -17,6 +17,7 @@ namespace Tbc.Host
         public static readonly Dictionary<string, Type> KnownConfigMappings = new Dictionary<string, Type>
         {
             [KnownConfigurationKeys.FileWatch] = typeof(FileWatchConfig),
+            [KnownConfigurationKeys.FileEnvironment] = typeof(FileEnvironmentConfig),
             [KnownConfigurationKeys.AssemblyCompilation] = typeof(AssemblyCompilationOptions),
             [KnownConfigurationKeys.ServiceDiscovery] = typeof(object),
         };

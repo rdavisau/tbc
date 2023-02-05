@@ -44,7 +44,11 @@ namespace tbc.host.console
                             RootPath = Environment.CurrentDirectory,
                             Ignore = { "/obj/", "/bin/" }   
                         }
-                        .ToJObject()
+                       .ToJObject(),
+
+                [KnownConfigurationKeys.FileEnvironment]
+                    = new FileEnvironmentConfig { }
+                       .ToJObject(),
             };
         }
     }
