@@ -98,6 +98,11 @@ namespace Tbc.Host.Components.IncrementalCompiler
             GlobalUsingResolution =
                 _globalUsingsResolver.ResolveGlobalUsings(new ResolveGlobalUsingsRequest(options.GlobalUsingsSources)).Result;
             
+            SetGlobalUsings();
+        }
+
+        private void SetGlobalUsings()
+        {
             if (GlobalUsingResolution.Usings.Any() && GlobalUsingResolution.UsingsSource is { } gus)
                 CurrentCompilation = CurrentCompilation.AddSyntaxTrees(
                     CSharpSyntaxTree.ParseText(
@@ -108,7 +113,6 @@ namespace Tbc.Host.Components.IncrementalCompiler
                            .WithPreprocessorSymbols(_options.PreprocessorSymbols.ToArray()),
                         path: "",
                         Encoding.Default));
-
         }
 
         private ImmutableDictionary<SourceGeneratorReference, ResolveSourceGeneratorsResponse> ResolveSourceGenerators()
@@ -360,15 +364,19 @@ namespace Tbc.Host.Components.IncrementalCompiler
                 return c.RemoveAllReferences();
             });
 
-        public void ClearTrees() =>
+        public void ClearTrees()
+        {
             WithCompilation(c =>
             {
                 Logger.LogInformation("Clearing syntax trees");
-                
+
                 RawTrees.Clear();
                 return c.RemoveAllSyntaxTrees();
             });
-        
+
+            SetGlobalUsings();
+        }
+
         public void PrintTrees(bool withDetail)
         {
             if (_rootPath is null)
