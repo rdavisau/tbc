@@ -111,8 +111,8 @@ public class AmbiguousInvocationFixer : ComponentBase<AmbiguousInvocationFixer>,
                         ((MemberAccessExpressionSyntax)inv.Expression).Name.WithIdentifier(
                             SyntaxFactory.Identifier(newIdentifier)));
 
-                    var from = inv.FindNode(inv.Span);
-                    var to = newInv.FindNode(newInv.Span);
+                    var from = inv.FindNode(inv.Span, getInnermostNodeForTie: true);
+                    var to = newInv.FindNode(newInv.Span, getInnermostNodeForTie: true);
 
                     tree = tree.GetRoot().ReplaceNode(from, to).SyntaxTree;
                 }
