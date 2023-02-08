@@ -1,9 +1,14 @@
 {
     "ConsoleHost": {
         "ExpectedClients": [{
-            "Address": "localhost",
-            "Port": 50129
-        }]
+                "Address": "localhost",
+                "Port": 50129
+            },
+            {
+                "Address": "localhost",
+                "Port": 50130
+            }
+        ]
     },
     "FileWatcher": {
         "RootPath": "maui",
@@ -25,7 +30,7 @@
         }],
         "GlobalUsingsSources": [{
             "Kind": "SearchPath",
-            "Reference": "maui/obj/Debug/net7.0-ios",
+            "Reference": "./maui/",
             "Context": "LastModified"
         }],
         "iOSDynamicRegistrationOptions": {

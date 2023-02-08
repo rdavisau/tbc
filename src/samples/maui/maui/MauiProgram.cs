@@ -40,7 +40,15 @@ public static class MauiProgram
     private static async Task RunTbc(MauiApp app, IContainer container)
     {
         var rm = new ReloadManager(container);
+
+        // listen on a different port for android
+        // need to adb forward this
+        // and need it in the reload config
+#if ANDROID
+        var ts = new Tbc.Target.TargetServer(TargetConfiguration.Default(port: 50130));
+#else
         var ts = new Tbc.Target.TargetServer(TargetConfiguration.Default(port: 50129));
+#endif
         await ts.Run(rm, x => Debug.WriteLine(x));
     }
 

@@ -2,7 +2,9 @@ run run-host.sh to start a host that will watch for the maui sample, then start 
 
 [quick video](https://rdavisau.blob.core.windows.net/zzz/tbc-maui.mp4?sv=2020-08-04&st=2023-01-12T05%3A07%3A25Z&se=2050-01-11T15%3A00%3A00Z&sr=b&sp=r&sig=ukrEaCJ15tyjn5pGd0wdMVxWsamVLLcZ20h6oB0B7lY%3D) - note video has rapid flashing colours for a few seconds at ~3:30 🚦
 
-only tested ios, other platforms probably need changes in reload-config.json to support global usings
+[android] (https://rdavisau.blob.core.windows.net/zzz/tbc-maui-android.mp4?sv=2020-08-04&st=2023-02-08T02%3A25%3A12Z&se=2050-02-09T02%3A25%3A00Z&sr=b&sp=r&sig=oRvblPXgJWBa6qNsMO8n%2FpCGrzTS6MpLuPccEslx6z0%3D)
+
+on android, you need to `adb forward tcp:50130 tcp:50130` and wait for all dependencies to slowly be shuffled from the app to the host (and maybe one failed reload needs to trigger it?)
 
 howto in general: 
 
