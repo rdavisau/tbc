@@ -111,9 +111,39 @@ namespace Tbc.Host.Components.FileEnvironment
                     if (ctx is null)
                         return;
 
-                    foreach (var file in ctx.WatchedFiles
-                                .Where(x => !String.IsNullOrWhiteSpace(x) && FileSystem.File.Exists(x))
-                                .Select(x => new ChangedFile { Path = x, Contents = FileSystem.File.ReadAllText(x) }))
+                    var filesToStage = new List<string>();
+                    foreach (var file in ctx.WatchedFiles)
+                    {
+                        // todo: work out how an empty ends up in here during save
+                        // (maybe from the warmup emit?)
+                        if (string.IsNullOrWhiteSpace(file))
+                            continue;
+
+                        if (file.EndsWith("*")) // add matching files
+                        {
+                            var searchOption = file.EndsWith("**")
+                                ? SearchOption.AllDirectories
+                                : SearchOption.TopDirectoryOnly;
+
+                            var path = file[0..^(searchOption is SearchOption.AllDirectories ? 2 : 1)];
+                            foreach (var f in FileSystem.Directory.GetFiles(path, "*.cs", searchOption))
+                                filesToStage.Add(new FileInfo(f).FullName);
+                        }
+                        else // just add this file
+                        {
+                            if (FileSystem.File.Exists(file))
+                                filesToStage.Add(new FileInfo(file).FullName);
+                        }
+                    }
+
+                    var fs = filesToStage.Select(x => new ChangedFile
+                    {
+                        Path = x,
+                        Contents = FileSystem.File.ReadAllText(x),
+                        Silent = true,
+                    });
+
+                    foreach (var file in fs)
                         IncrementalCompiler.StageFile(file, silent: true);
 
                     await SetPrimaryTypeHint(ctx.PrimaryTypeHint);
