@@ -130,7 +130,7 @@ namespace Tbc.Host.Components.FileWatcher
 
             foreach (var file in filesInPath)
                 if (TryGetChangedFile(file) is {} cf)
-                    _manualWatchFiles.OnNext(cf);
+                    _manualWatchFiles.OnNext(cf with { Silent = true });
 
             return Task.CompletedTask;
         }

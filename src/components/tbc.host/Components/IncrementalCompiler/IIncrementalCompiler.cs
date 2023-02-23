@@ -8,7 +8,7 @@ namespace Tbc.Host.Components.IncrementalCompiler
     public interface IIncrementalCompiler
     {
         List<string> StagedFiles { get; }
-        EmittedAssembly? StageFile(ChangedFile file) => StageFile(file, false);
+        EmittedAssembly? StageFile(ChangedFile file) => StageFile(file, file.Silent);
         EmittedAssembly? StageFile(ChangedFile file, bool silent = false);
         void AddMetadataReference(AssemblyReference asm);
         void ClearReferences();
