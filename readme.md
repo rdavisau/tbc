@@ -36,9 +36,9 @@ tbc will probably always have rough edges/require 'hard work' because an officia
 
 # how to use
 
-1. install a tbc 'host' e.g. `tbc.host.console`: `dotnet tool install -g tbc.console --add-source https://myget.org/F/rdavisau/api/v3/index.json`
+1. install a tbc 'host' e.g. `tbc.host.console`: `dotnet tool install -g tbc.console`
 
-2. add the tbc 'target' package to your reloadable app, for now it's a prerelease on MyGet (`tbc.target` in https://www.myget.org/F/rdavisau/api/v3/index.json)
+2. add the tbc 'target' package to your reloadable app (`tbc.target`)
 
 3. provide an implementation of `IReloadManager` (tip: derive from `ReloadManagerBase`)
     - implement `ProcessNewAssembly` to integrate new types and perform any reload/navigation/recall of changed classes
