@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <RootNamespace>Tbc.Host</RootNamespace>
         <LangVersion>preview</LangVersion>        
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -15,19 +15,22 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DryIoc.Microsoft.DependencyInjection" Version="6.1.0" />
-        <PackageReference Include="IgnoresAccessChecksToGenerator" Version="0.6.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-        <PackageReference Include="NuGet.Configuration" Version="6.4.0" />
-        <PackageReference Include="OneOf" Version="3.0.223" />
+        <PackageReference Include="DryIoc.Microsoft.DependencyInjection" Version="6.2.0" />
+        <PackageReference Include="IgnoresAccessChecksToGenerator" Version="0.7.0">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.9.2" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="NuGet.Configuration" Version="6.9.1" />
+        <PackageReference Include="OneOf" Version="3.0.263" />
         <PackageReference Include="RxFileSystemWatcher" Version="1.0.0" />
         <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20303.1" />
-        <PackageReference Include="System.IO.Abstractions" Version="19.1.5" />
+        <PackageReference Include="System.IO.Abstractions" Version="20.0.15" />
         <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-        <PackageReference Include="System.Reactive.Compatibility" Version="5.0.0" />
+        <PackageReference Include="System.Reactive.Compatibility" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>
