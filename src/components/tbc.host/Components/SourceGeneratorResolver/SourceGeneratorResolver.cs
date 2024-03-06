@@ -68,7 +68,7 @@ public class SourceGeneratorResolver : ComponentBase<SourceGeneratorResolver>, I
                 Diags: ImmutableDictionary.Create<string, object>());
         }
 
-        var searches = new[] { "roslyn4.0/cs", "roslyn4.0\\cs", "analyzers/dotnet/cs", "analyzers\\dotnet\\cs" };
+        var searches = new[] { "roslyn4.0/cs", "roslyn4.0\\cs", "analyzers/dotnet/cs", "analyzers\\dotnet\\cs", "analyzers/dotnet/roslyn4.0", "analyzers\\dotnet\\roslyn4.0", };
 
         var nugetPath = _fileSystem.Path.Combine(GetNugetPackageCachePath, package, version);
         var dllPaths = _fileSystem.Directory.GetFiles(nugetPath, "*.dll", SearchOption.AllDirectories)
