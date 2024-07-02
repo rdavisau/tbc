@@ -56,7 +56,6 @@ public class SocketServer<TProtocol> : IRemoteEndpoint
         {
             SocketSerializationFormat.Json => new ClearTextSystemTextJsonSocketSerializer(),
             SocketSerializationFormat.CompressedJson => new SystemTextJsonSocketSerializer(),
-            SocketSerializationFormat.MessagePack => new MessagePackSocketSerializer(),
             _ => throw new ArgumentOutOfRangeException()
         };
 

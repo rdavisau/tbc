@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using MessagePack;
 
 namespace Tbc.Core.Models;
 
@@ -31,32 +30,24 @@ public interface ISocketMessage
     object Payload { get; }
 }
 
-[MessagePackObject]
 public record SocketRequest<T> : ISocketMessage
 {
-    [Key(0)]
     public string RequestIdentifier { get; set; } = default!;
 
-    [Key(1)]
     public T Payload { get; init; } = default!;
 
     SocketMessageKind ISocketMessage.Kind => SocketMessageKind.Request;
     object ISocketMessage.Payload => Payload!;
 }
 
-[MessagePackObject]
 public record SocketResponse<T> : ISocketMessage
 {
-    [Key(0)]
     public string RequestIdentifier { get; set; } = default!;
 
-    [Key(1)]
     public SocketRequestOutcome Outcome { get; set; }
 
-    [Key(2)]
     public T Data { get; set; } = default!;
 
-    [Key(3)]
     public string? ErrorData { get; set; }
 
     SocketMessageKind ISocketMessage.Kind => SocketMessageKind.Response;
@@ -107,57 +98,41 @@ public enum ReceiveResultOutcome
     Disconnect
 }
 
-[MessagePackObject]
 public record LoadDynamicAssemblyRequest
 {
-    [Key(0)]
     public byte[] PeBytes { get; set; } = default!;
 
-    [Key(1)]
     public byte[]? PdbBytes { get; set; }
 
-    [Key(2)]
     public string AssemblyName { get; set; } = default!;
 
-    [Key(3)]
     public string? PrimaryTypeName { get; set; } = default!;
 }
 
-[MessagePackObject]
 public record Outcome
 {
-    [Key(0)]
     public bool Success { get; set; }
 
-    [Key(1)]
     public List<OutcomeMessage> Messages { get; set; } = new();
 }
 
-[MessagePackObject]
 public record OutcomeMessage
 {
-    [Key(0)]
     public string Message { get; set; } = default!;
 }
 
-[MessagePackObject]
 public record ExecuteCommandRequest
 {
-    [Key(0)]
     public string Command { get; set; } = default!;
 
-    [Key(1)]
     public List<string> Args { get; set; } = new();
 }
 
-[MessagePackObject]
 public record CachedAssemblyState
 {
-    [Key(0)]
     public List<CachedAssembly> CachedAssemblies { get; set; } = new();
 }
 
-[MessagePackObject]
 public record CachedAssembly
 {
     public CachedAssembly() {}
@@ -169,53 +144,38 @@ public record CachedAssembly
         ModificationTime = assemblyReference.ModificationTime;
     }
 
-    [Key(0)]
     public string? AssemblyName { get; set; } = default!;
-    [Key(1)]
     public string AssemblyLocation { get; set; } = default!;
-    [Key(2)]
     public DateTimeOffset ModificationTime { get; set; }
 }
 
-[MessagePackObject]
 public record AssemblyReference
 {
-    [Key(0)]
     public string AssemblyName { get; set; } = default!;
-    [Key(1)]
     public string AssemblyLocation { get; set; } = default!;
-    [Key(2)]
     public DateTimeOffset ModificationTime { get; set; } = default!;
-    [Key(3)]
     public byte[]? PeBytes { get; set; } = default!;
 }
 
-[MessagePackObject]
 public record ManyAssemblyReferences
 {
-    [Key(0)] public List<AssemblyReference> AssemblyReferences { get; set; } = new();
+    public List<AssemblyReference> AssemblyReferences { get; set; } = new();
 }
 
-[MessagePackObject]
 public record HostHello
 {
-    [Key(0)]
     public string SharedHostFilePath { get; set; } = default!;
 }
 
-[MessagePackObject]
 public record TargetHello
 {
-    [Key(0)] public string? ApplicationIdentifier { get; set; } = default!;
+    public string? ApplicationIdentifier { get; set; } = default!;
 
-    [Key(1)]
     public bool CanAccessSharedHostFile { get; set; }
 
-    [Key(2)]
     public bool UseSharedFilesystemDependencyResolution { get; set; }
 
-    [Key(3)] public string RootAssemblyPath { get; set; } = default!;
+    public string RootAssemblyPath { get; set; } = default!;
 
-    [Key(4)]
     public bool UseDependencyCache { get; set; }
 }
