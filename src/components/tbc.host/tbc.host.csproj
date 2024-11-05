@@ -20,17 +20,17 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.9.2" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="NuGet.Configuration" Version="6.9.1" />
-        <PackageReference Include="OneOf" Version="3.0.263" />
+        <PackageReference Include="NuGet.Configuration" Version="6.11.1" />
+        <PackageReference Include="OneOf" Version="3.0.271" />
         <PackageReference Include="RxFileSystemWatcher" Version="1.0.0" />
         <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20303.1" />
-        <PackageReference Include="System.IO.Abstractions" Version="20.0.15" />
+        <PackageReference Include="System.IO.Abstractions" Version="21.0.29" />
         <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-        <PackageReference Include="System.Reactive.Compatibility" Version="6.0.0" />
+        <PackageReference Include="System.Reactive.Compatibility" Version="6.0.1" />
     </ItemGroup>
 
     <ItemGroup>
