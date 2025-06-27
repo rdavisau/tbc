@@ -1,6 +1,6 @@
-dotnet publish -c Release -o output/win -r win-x64 -f net7.0 -p:PublishSingleFile=true -p:PackAsTool=false -p:DebugType=None --self-contained src/heads/tbc.host.console/tbc.host.console.csproj
-dotnet publish -c Release -o output/macos-x64 -r osx-x64 -f net7.0 -p:PublishSingleFile=true -p:PackAsTool=false -p:DebugType=None --self-contained src/heads/tbc.host.console/tbc.host.console.csproj
-dotnet publish -c Release -o output/macos-arm64 -r osx-arm64 -f net7.0 -p:PublishSingleFile=true -p:PackAsTool=false -p:DebugType=None --self-contained src/heads/tbc.host.console/tbc.host.console.csproj
+dotnet publish -c Release -o output/win -r win-x64 -f net9.0 -p:PublishSingleFile=true -p:PackAsTool=false -p:DebugType=None --self-contained src/heads/tbc.host.console/tbc.host.console.csproj
+dotnet publish -c Release -o output/macos-x64 -r osx-x64 -f net9.0 -p:PublishSingleFile=true -p:PackAsTool=false -p:DebugType=None --self-contained src/heads/tbc.host.console/tbc.host.console.csproj
+dotnet publish -c Release -o output/macos-arm64 -r osx-arm64 -f net9.0 -p:PublishSingleFile=true -p:PackAsTool=false -p:DebugType=None --self-contained src/heads/tbc.host.console/tbc.host.console.csproj
 
 dotnet build -c Release src/components/tbc.core/tbc.core.csproj
 dotnet build -c Release src/components/tbc.target/tbc.target.csproj
