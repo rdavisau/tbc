@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <RootNamespace>Tbc.Host</RootNamespace>
         <LangVersion>preview</LangVersion>        
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -16,20 +16,20 @@
 
     <ItemGroup>
         <PackageReference Include="DryIoc.Microsoft.DependencyInjection" Version="6.2.0" />
-        <PackageReference Include="IgnoresAccessChecksToGenerator" Version="0.7.0">
+        <PackageReference Include="IgnoresAccessChecksToGenerator" Version="0.8.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.6" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="NuGet.Configuration" Version="6.11.1" />
+        <PackageReference Include="NuGet.Configuration" Version="6.14.0" />
         <PackageReference Include="OneOf" Version="3.0.271" />
         <PackageReference Include="RxFileSystemWatcher" Version="1.0.0" />
         <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20303.1" />
-        <PackageReference Include="System.IO.Abstractions" Version="21.0.29" />
-        <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+        <PackageReference Include="System.IO.Abstractions" Version="22.0.14" />
+        <PackageReference Include="System.Linq.Async" Version="6.0.3" />
         <PackageReference Include="System.Reactive.Compatibility" Version="6.0.1" />
     </ItemGroup>
 
